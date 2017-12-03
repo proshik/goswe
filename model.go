@@ -7,10 +7,10 @@ type RawWord struct {
 }
 
 type Word struct {
-	Text        string
-	Category    string
-	Subcategory string
-	Translate   []Def
+	Text        string `json:"text"`
+	Category    string `json:"category"`
+	Subcategory string `json:"subcategory"`
+	Translate   []Def  `json:"translate"`
 }
 
 type Translate struct {

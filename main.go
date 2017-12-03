@@ -21,41 +21,38 @@ func main() {
 		panic("DB_PATH is required variable")
 	}
 
+	yandexDict := NewYandex(yToken)
+	dbConnect := NewDB(dbPath)
+
+}
+
+func fillBasicEnglishWords(yandex *YandexDict, db *DBConnect) {
 	file, err := os.Open("result.json")
 	if err != nil {
 		panic(err)
 	}
 
-	decoder := json.NewDecoder(file)
-
 	var rawWords = make([]RawWord, 0)
+
+	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&rawWords)
 	if err != nil {
 		panic(err)
 	}
 
-	yandex := NewYandex(yToken)
-	db := NewDB(dbPath)
-
-	for i := 0; i < 3; i++ {
-		tr, err := yandex.translate(rawWords[i].Text)
+	for _, rw := range rawWords {
+		tr, err := yandex.translate(rw.Text)
 		if err != nil {
-			log.Fatalf("Error on iteration=%d, text=%s, with error=%v", i, rawWords[i].Text, err)
+			log.Fatalf("Error on word=%s, with error=%v", rw.Text, err)
 		}
 
-		word, err := db.AddWOrd(Word{rawWords[i].Text, rawWords[i].Category, rawWords[i].Subcategory, tr.Def})
+		word, err := db.AddWOrd(Word{rw.Text, rw.Category, rw.Subcategory, tr.Def})
 		if err != nil {
 			panic(err)
 		}
 
 		fmt.Printf("Success translate and save word=%s\n", word.Text)
 	}
-
-	//for _, rw := range rawWords {
-	//
-	//	yandex.
-	//
-	//}
 }
 
 func readRawWords() {
