@@ -10,7 +10,7 @@ type Word struct {
 	Text        string
 	Category    string
 	Subcategory string
-	Translate   Def
+	Translate   []Def
 }
 
 type Translate struct {

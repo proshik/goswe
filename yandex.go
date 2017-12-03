@@ -9,7 +9,11 @@ type YandexDict struct {
 	Token string
 }
 
-func (yDict YandexDict) translate(text string) (*Translate, error) {
+func NewYandex(token string) *YandexDict {
+	return &YandexDict{token}
+}
+
+func (yDict *YandexDict) translate(text string) (*Translate, error) {
 
 	resp, err := http.Get("https://dictionary.yandex.net/api/v1/dicservice.json/lookup?lang=en-ru&key=" + yDict.Token + "&text=" + text)
 	if err != nil {
