@@ -32,7 +32,7 @@ func NewDB(path string) *DBConnect {
 	return &DBConnect{path}
 }
 
-func (c *DBConnect) AddWOrd(word Word) (*Word, error) {
+func (c *DBConnect) AddWord(word Word) (*Word, error) {
 	db, err := open(c)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,31 @@ func (c *DBConnect) AddWOrd(word Word) (*Word, error) {
 
 }
 
-func (c *DBConnect) GetEnv(text string) (*Word, error) {
+func (c *DBConnect) CountWords() (int, error) {
+	db, err := open(c)
+	if err != nil {
+		return 0, err
+	}
+
+	defer db.Close()
+
+	var count int
+	err = db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(wordsBucket))
+
+		count = b.Stats().KeyN
+
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error on get count words in DB. %s\n", err)
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (c *DBConnect) GetWords(text string) (*Word, error) {
 	db, err := open(c)
 	if err != nil {
 		return nil, err

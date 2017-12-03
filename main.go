@@ -75,7 +75,7 @@ func translate(yandex *YandexDict, db *DBConnect) {
 			return
 		}
 
-		word, err := db.GetEnv(result)
+		word, err := db.GetWords(result)
 		if err != nil {
 			fmt.Printf("Error on translate word=%s\n", result)
 		}
@@ -94,7 +94,7 @@ func translate(yandex *YandexDict, db *DBConnect) {
 			//todo тут можно сделать зарпос на попытку повторного перевода
 		}
 
-		word, err = db.AddWOrd(Word{result, "Default", "Default", tr.Def})
+		word, err = db.AddWord(Word{result, "Default", "Default", tr.Def})
 		if err != nil {
 			fmt.Printf("Error on save word=%s in db\n", result)
 			continue
@@ -108,6 +108,32 @@ func translate(yandex *YandexDict, db *DBConnect) {
 		printWord(word)
 	}
 
+}
+
+func learn(db *DBConnect) {
+	prompt := promptui.Select{
+		Label: "Select command",
+		Items: []string{"words", "rules"},
+	}
+
+	_, result, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return
+	}
+
+	switch result {
+	case "words":
+
+	case "rules":
+	}
+
+	fmt.Printf("Selected %s", result)
+
+}
+
+func managment(db *DBConnect) {
+	fmt.Printf("Not implemented")
 }
 
 func printWord(word *Word) {
@@ -146,26 +172,6 @@ func printWord(word *Word) {
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
 
-func learn(db *DBConnect) {
-	prompt := promptui.Select{
-		Label: "Select command",
-		Items: []string{"words", "rules"},
-	}
-
-	_, result, err := prompt.Run()
-	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return
-	}
-
-	fmt.Printf("Selected %s", result)
-
-}
-
-func managment(db *DBConnect) {
-
-}
-
 func fillBasicEnglishWords(yandex *YandexDict, db *DBConnect) {
 	file, err := os.Open("result.json")
 	if err != nil {
@@ -186,7 +192,7 @@ func fillBasicEnglishWords(yandex *YandexDict, db *DBConnect) {
 			log.Fatalf("Error on word=%s, with error=%v", rw.Text, err)
 		}
 
-		word, err := db.AddWOrd(Word{rw.Text, rw.Category, rw.Subcategory, tr.Def})
+		word, err := db.AddWord(Word{rw.Text, rw.Category, rw.Subcategory, tr.Def})
 		if err != nil {
 			panic(err)
 		}
