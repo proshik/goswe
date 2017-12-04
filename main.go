@@ -15,15 +15,18 @@ import (
 )
 
 func main() {
-	yToken := os.Getenv("Y_TOKEN")
-	if yToken == "" {
-		panic("Y_TOKEN is required variable")
-	}
+	//yToken := os.Getenv("Y_TOKEN")
+	//if yToken == "" {
+	//	panic("Y_TOKEN is required variable")
+	//}
+	yToken := "dict.1.1.20171201T214544Z.c0def3859d70a33d.88c6cf03a4e01eae8d732fce76205af4d35a7956"
 
-	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" {
-		panic("DB_PATH is required variable")
-	}
+	//dbPath := os.Getenv("DB_PATH")
+	//if dbPath == "" {
+	//	panic("DB_PATH is required variable")
+	//}
+
+	dbPath := "database.db"
 
 	yandexDict := NewYandex(yToken)
 	dbConnect := NewDB(dbPath)
@@ -80,7 +83,7 @@ func translate(yandex *YandexDict, db *DBConnect) {
 			fmt.Printf("Error on translate word=%s\n", result)
 		}
 
-		if word != nil {
+		if word != nil && word.Translate != nil && len(word.Translate) > 0 {
 			printWord(word)
 			continue
 		}
@@ -100,8 +103,8 @@ func translate(yandex *YandexDict, db *DBConnect) {
 			continue
 		}
 
-		if word.Translate == nil || len(word.Translate) == 0 {
-			fmt.Printf("Translate not found")
+		if word == nil || word.Translate == nil || len(word.Translate) == 0 {
+			fmt.Printf("Translate not found\n")
 			continue
 		}
 
