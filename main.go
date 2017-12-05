@@ -3,14 +3,14 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
+	_"errors"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
+	_"strconv"
 	"strings"
 )
 
@@ -59,64 +59,64 @@ func main() {
 /*
  Follow need functions. Not remove!
 */
-
-func translate(yandex *YandexDict, db *DBConnect) {
-	for {
-		validate := func(input string) error {
-			if len(input) < 2 || len(input) > 25 {
-				return errors.New("From 2 to 25 symbols\n")
-			}
-			_, err := strconv.ParseFloat(input, 64)
-			if err == nil {
-				return errors.New("Not numbers\n")
-			}
-			return nil
-		}
-
-		prompt := promptui.Prompt{
-			Label:    "Word",
-			Validate: validate,
-		}
-
-		result, err := prompt.Run()
-		if err != nil {
-			fmt.Printf("Error on read word, %v\n", err)
-			return
-		}
-
-		word, err := db.GetWords(result)
-		if err != nil {
-			fmt.Printf("Error on translate word=%s\n", result)
-		}
-
-		if word != nil && word.Translate != nil && len(word.Translate) > 0 {
-			printWord(word)
-			continue
-		}
-
-		fmt.Printf("Will be translate throw YandexDict\n")
-
-		tr, err := yandex.translate(result)
-		if err != nil {
-			fmt.Printf("Error on translate word=%s\n", result)
-			continue
-			//todo тут можно сделать зарпос на попытку повторного перевода
-		}
-
-		word, err = db.AddWord(Word{result, "Default", "Default", tr.Def})
-		if err != nil {
-			fmt.Printf("Error on save word=%s in db\n", result)
-			continue
-		}
-
-		if word == nil || word.Translate == nil || len(word.Translate) == 0 {
-			fmt.Printf("Translate not found\n")
-			continue
-		}
-
-		printWord(word)
-	}
-}
+//
+//func translate(yandex *YandexDict, db *DBConnect) {
+//	for {
+//		validate := func(input string) error {
+//			if len(input) < 2 || len(input) > 25 {
+//				return errors.New("From 2 to 25 symbols\n")
+//			}
+//			_, err := strconv.ParseFloat(input, 64)
+//			if err == nil {
+//				return errors.New("Not numbers\n")
+//			}
+//			return nil
+//		}
+//
+//		prompt := promptui.Prompt{
+//			Label:    "Word",
+//			Validate: validate,
+//		}
+//
+//		result, err := prompt.Run()
+//		if err != nil {
+//			fmt.Printf("Error on read word, %v\n", err)
+//			return
+//		}
+//
+//		word, err := db.GetWords(result)
+//		if err != nil {
+//			fmt.Printf("Error on translate word=%s\n", result)
+//		}
+//
+//		if word != nil && word.Translate != nil && len(word.Translate) > 0 {
+//			printWord(word)
+//			continue
+//		}
+//
+//		fmt.Printf("Will be translate throw YandexDict\n")
+//
+//		tr, err := yandex.translate(result)
+//		if err != nil {
+//			fmt.Printf("Error on translate word=%s\n", result)
+//			continue
+//			//todo тут можно сделать зарпос на попытку повторного перевода
+//		}
+//
+//		word, err = db.AddWord(Word{result, "Default", "Default", tr.Def})
+//		if err != nil {
+//			fmt.Printf("Error on save word=%s in db\n", result)
+//			continue
+//		}
+//
+//		if word == nil || word.Translate == nil || len(word.Translate) == 0 {
+//			fmt.Printf("Translate not found\n")
+//			continue
+//		}
+//
+//		printWord(word)
+//	}
+//}
 
 func learn(db *DBConnect) {
 	prompt := promptui.Select{
@@ -226,6 +226,7 @@ func readRawWords() {
 			if err != nil {
 				panic(err)
 			}
+
 
 			defer file.Close()
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"fmt"
 	"log"
+	"encoding/json"
 )
 
 var (
@@ -90,13 +91,21 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 
 	g.Update(func(g *gocui.Gui) error {
 
-		translate, err := g.View("translate")
+		translateView, err := g.View("translate")
 		if err != nil {
 			return err
 		}
 
-		value := getViewValue(g, "text")
-		fmt.Fprintln(translate, value)
+		word, err := translate(ui.YandexDict, ui.DBConnect, getViewValue(g, "text"))
+		_, err = json.MarshalIndent(&word, "", "\t")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+
+		translateView.Clear()
+
+		//valueFromTextView := getViewValue(g, "text")
+		fmt.Fprintln(translateView, word.Translate[0].Tr[0].Text)
 		//cleanView(g, text)
 		return nil
 	})
@@ -168,4 +177,70 @@ func setViewTextAndCursor(v *gocui.View, s string) {
 	v.Clear()
 	fmt.Fprint(v, s)
 	v.SetCursor(len(s), 0)
+}
+
+func translate(yandex *YandexDict, db *DBConnect, text string) (*Word, error) {
+	//for {
+	//	validate := func(input string) error {
+	//		if len(input) < 2 || len(input) > 25 {
+	//			return errors.New("From 2 to 25 symbols\n")
+	//		}
+	//		_, err := strconv.ParseFloat(input, 64)
+	//		if err == nil {
+	//			return errors.New("Not numbers\n")
+	//		}
+	//		return nil
+	//	}
+
+	//validate(word)
+	//
+	//prompt := promptui.Prompt{
+	//	Label:    "Word",
+	//	Validate: validate,
+	//}
+	//
+	//result, err := prompt.Run()
+	//if err != nil {
+	//	fmt.Printf("Error on read word, %v\n", err)
+	//	return
+	//}
+
+	word, err := db.GetWords(text)
+	if err != nil {
+		return nil, err
+		//fmt.Printf("Error on translate word=%s\n", text)
+	}
+
+	if word != nil && word.Translate != nil && len(word.Translate) > 0 {
+		//printWord(word)
+		return word, nil
+		//continue
+	}
+
+	fmt.Printf("Will be translate throw YandexDict\n")
+
+	tr, err := yandex.translate(text)
+	if err != nil {
+		fmt.Printf("Error on translate word=%s\n", text)
+		return nil, err
+		//continue
+		//todo тут можно сделать зарпос на попытку повторного перевода
+	}
+
+	word, err = db.AddWord(Word{text, "Default", "Default", tr.Def})
+	if err != nil {
+		fmt.Printf("Error on save word=%s in db\n", text)
+		return nil, err
+		//continue
+	}
+
+	if word == nil || word.Translate == nil || len(word.Translate) == 0 {
+		fmt.Printf("Translate not found\n")
+		return nil, nil
+		//continue
+	}
+
+	return word, nil
+	//printWord(word)
+	//}
 }
