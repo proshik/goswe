@@ -1,17 +1,17 @@
 package main
 
 import (
-	"io/ioutil"
-	"os"
 	"bufio"
-	"strings"
 	"encoding/json"
-	"fmt"
-	"log"
-	"github.com/manifoldco/promptui"
 	"errors"
-	"strconv"
+	"fmt"
 	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
+	"io/ioutil"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 )
@@ -144,7 +144,6 @@ func handleText(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 
-
 		value := getViewValue(g, "text")
 		fmt.Fprintln(translate, value)
 		//cleanView(g, text)
@@ -216,7 +215,7 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 
 /*
  Follow need functions. Not remove!
- */
+*/
 
 func translate(yandex *YandexDict, db *DBConnect) {
 	for {

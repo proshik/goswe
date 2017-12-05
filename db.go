@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/boltdb/bolt"
-	"time"
-	"encoding/json"
-	"log"
 	"encoding/binary"
+	"encoding/json"
+	"github.com/boltdb/bolt"
+	"log"
+	"time"
 )
 
 var wordsBucket = "words"
