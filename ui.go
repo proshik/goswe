@@ -4,6 +4,12 @@ import (
 	"github.com/jroimartin/gocui"
 	"strings"
 	"fmt"
+	"log"
+)
+
+var (
+	viewArr = []string{"text", "translate", "history"}
+	active  = 0
 )
 
 type UI struct {
@@ -12,34 +18,51 @@ type UI struct {
 }
 
 func NewUI(yd *YandexDict, dbc *DBConnect) *UI {
-	return NewUI(yd, dbc)
+	return &UI{yd, dbc}
 }
 
-func Run
+func (ui *UI) Run() {
+	g, err := gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
+		log.Panicln(err)
+	}
+	defer g.Close()
 
-func cleanView(g *gocui.Gui, v *gocui.View) error {
+	g.Highlight = true
+	g.Cursor = true
+	g.SelFgColor = gocui.ColorYellow
+	g.InputEsc = true
+
+	g.SetManagerFunc(layout)
+
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, ui.quit); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, ui.nextView); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding("text", gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding("text", gocui.KeyEsc, gocui.ModNone, ui.cleanView); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+		log.Panicln(err)
+	}
+}
+
+func (ui *UI) cleanView(g *gocui.Gui, v *gocui.View) error {
 	g.Update(func(g *gocui.Gui) error {
 		v.Clear()
 		v.SetCursor(0, 0)
 		return nil
 	})
-
 	return nil
 }
 
-var (
-	viewArr = []string{"text", "translate", "history"}
-	active  = 0
-)
-
-func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
-	if _, err := g.SetCurrentView(name); err != nil {
-		return nil, err
-	}
-	return g.SetViewOnTop(name)
-}
-
-func nextView(g *gocui.Gui, v *gocui.View) error {
+func (ui *UI) nextView(g *gocui.Gui, v *gocui.View) error {
 	nextIndex := (active + 1) % len(viewArr)
 	name := viewArr[nextIndex]
 
@@ -63,13 +86,9 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func handleText(g *gocui.Gui, v *gocui.View) error {
+func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 
 	g.Update(func(g *gocui.Gui) error {
-		//_, err := g.View("text")
-		//if err != nil {
-		//	return err
-		//}
 
 		translate, err := g.View("translate")
 		if err != nil {
@@ -81,27 +100,7 @@ func handleText(g *gocui.Gui, v *gocui.View) error {
 		//cleanView(g, text)
 		return nil
 	})
-
 	return nil
-}
-
-func getViewValue(g *gocui.Gui, name string) string {
-	v, err := g.View(name)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(v.Buffer())
-}
-
-func setViewDefaults(v *gocui.View) {
-	v.Frame = true
-	v.Wrap = false
-}
-
-func setViewTextAndCursor(v *gocui.View, s string) {
-	v.Clear()
-	fmt.Fprint(v, s)
-	v.SetCursor(len(s), 0)
 }
 
 func layout(g *gocui.Gui) error {
@@ -141,6 +140,32 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
+func (ui *UI) quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
+}
+
+func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
+	if _, err := g.SetCurrentView(name); err != nil {
+		return nil, err
+	}
+	return g.SetViewOnTop(name)
+}
+
+func getViewValue(g *gocui.Gui, name string) string {
+	v, err := g.View(name)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(v.Buffer())
+}
+
+func setViewDefaults(v *gocui.View) {
+	v.Frame = true
+	v.Wrap = false
+}
+
+func setViewTextAndCursor(v *gocui.View, s string) {
+	v.Clear()
+	fmt.Fprint(v, s)
+	v.SetCursor(len(s), 0)
 }

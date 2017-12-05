@@ -12,8 +12,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/jroimartin/gocui"
 )
 
 func main() {
@@ -21,17 +19,19 @@ func main() {
 	//if yToken == "" {
 	//	panic("Y_TOKEN is required variable")
 	//}
-	//yToken := "dict.1.1.20171201T214544Z.c0def3859d70a33d.88c6cf03a4e01eae8d732fce76205af4d35a7956"
+	yToken := "dict.1.1.20171201T214544Z.c0def3859d70a33d.88c6cf03a4e01eae8d732fce76205af4d35a7956"
 
 	//dbPath := os.Getenv("DB_PATH")
 	//if dbPath == "" {
 	//	panic("DB_PATH is required variable")
 	//}
+	dbPath := "database.db"
 
-	//dbPath := "database.db"
+	yandexDict := NewYandex(yToken)
+	dbConnect := NewDB(dbPath)
+	ui := NewUI(yandexDict, dbConnect)
 
-	//yandexDict := NewYandex(yToken)
-	//dbConnect := NewDB(dbPath)
+	ui.Run()
 
 	//for {
 	//	prompt := promptui.Select{
@@ -54,36 +54,6 @@ func main() {
 	//		managment(dbConnect)
 	//	}
 	//}
-
-	g, err := gocui.NewGui(gocui.OutputNormal)
-	if err != nil {
-		log.Panicln(err)
-	}
-	defer g.Close()
-
-	g.Highlight = true
-	g.Cursor = true
-	g.SelFgColor = gocui.ColorYellow
-	g.InputEsc = true
-
-	g.SetManagerFunc(layout)
-
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
-		log.Panicln(err)
-	}
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, nextView); err != nil {
-		log.Panicln(err)
-	}
-	if err := g.SetKeybinding("text", gocui.KeyEnter, gocui.ModNone, handleText); err != nil {
-		log.Panicln(err)
-	}
-	if err := g.SetKeybinding("text", gocui.KeyEsc, gocui.ModNone, cleanView); err != nil {
-		log.Panicln(err)
-	}
-
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		log.Panicln(err)
-	}
 }
 
 /*
@@ -146,7 +116,6 @@ func translate(yandex *YandexDict, db *DBConnect) {
 
 		printWord(word)
 	}
-
 }
 
 func learn(db *DBConnect) {
