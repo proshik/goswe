@@ -81,13 +81,9 @@ func (ui *UI) cleanView(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (ui *UI) nextView(g *gocui.Gui, v *gocui.View) error {
-
 	nextIndex := (activeIndex + 1) % len(VIEW_TITLES)
-	//name := VIEW_TITLES[nextIndex]
 
-	//_, err := g.SetCurrentView(VIEWS[nextIndex])
-
-	if _, err := setCurrentViewOnTop(g, VIEWS[nextIndex]); err != nil {
+	if _, err := g.SetCurrentView(VIEWS[nextIndex]); err != nil {
 		return err
 	}
 
@@ -154,7 +150,7 @@ func layout(g *gocui.Gui) error {
 		v.Editable = true
 		v.Wrap = true
 
-		if _, err = setCurrentViewOnTop(g, TEXT_VIEW); err != nil {
+		if _, err = g.SetCurrentView(TEXT_VIEW); err != nil {
 			return err
 		}
 	}
@@ -181,14 +177,6 @@ func layout(g *gocui.Gui) error {
 func (ui *UI) quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
-
-//
-//func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
-//	if _, err := g.SetCurrentView(name); err != nil {
-//		return nil, err
-//	}
-//	return g.SetViewOnTop(name)
-//}
 
 func getViewValue(g *gocui.Gui, name string) string {
 	v, err := g.View(name)
