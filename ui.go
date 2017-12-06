@@ -101,6 +101,9 @@ func (ui *UI) nextView(g *gocui.Gui, v *gocui.View) error {
 func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 	//extract text from TEXT view
 	textFromTextView := getViewValue(g, TEXT_VIEW)
+	if textFromTextView == "" {
+		return nil
+	}
 	// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
 	go g.Update(func(g *gocui.Gui) error {
 		translateView, err := g.View(TRANSLATE_VIEW)
@@ -108,8 +111,7 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 
-		fmt.Fprintln(translateView, "...translated...")
-
+		//fmt.Fprintln(translateView, "...translated...")
 		word, err := translate(ui.YDict, ui.DBConnect, textFromTextView)
 		if err != nil {
 			fmt.Fprintln(translateView, "...error on translate text...")
