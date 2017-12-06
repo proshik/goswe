@@ -5,15 +5,15 @@ import (
 	"net/http"
 )
 
-type YandexDict struct {
+type YDict struct {
 	Token string
 }
 
-func NewYandex(token string) *YandexDict {
-	return &YandexDict{token}
+func NewYDict(token string) *YDict {
+	return &YDict{token}
 }
 
-func (yDict *YandexDict) translate(text string) (*Translate, error) {
+func (yDict *YDict) translate(text string) (*Translate, error) {
 
 	resp, err := http.Get("https://dictionary.yandex.net/api/v1/dicservice.json/lookup?lang=en-ru&key=" + yDict.Token + "&text=" + text)
 	if err != nil {
@@ -32,19 +32,3 @@ func (yDict *YandexDict) translate(text string) (*Translate, error) {
 
 	return &tr, nil
 }
-
-//func main() {
-//	yandex := YandexDict{""}
-//
-//	result, err := yandex.translate("success")
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	b, err := json.MarshalIndent(&result, "", "\t")
-//	if err != nil {
-//		fmt.Println("error:", err)
-//	}
-//
-//	fmt.Printf("%s\n", b)
-//}

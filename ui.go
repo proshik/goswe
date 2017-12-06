@@ -1,24 +1,41 @@
 package main
 
 import (
-	"github.com/jroimartin/gocui"
-	"strings"
+	"bytes"
 	"fmt"
+	"github.com/jroimartin/gocui"
 	"log"
-	"encoding/json"
+	"strings"
 )
 
-var (
-	viewArr = []string{"text", "translate", "history"}
-	active  = 0
+const (
+	ALL_VIEWS = ""
+
+	TEXT_VIEW      = "text"
+	TRANSLATE_VIEW = "translate"
+	HISTORY_VIEW   = "history"
 )
 
-type UI struct {
-	YandexDict *YandexDict
-	DBConnect  *DBConnect
+var VIEW_TITLES = map[string]string{
+	TEXT_VIEW:      "Text",
+	TRANSLATE_VIEW: "Translate",
+	HISTORY_VIEW:   "History",
 }
 
-func NewUI(yd *YandexDict, dbc *DBConnect) *UI {
+var VIEWS = []string{
+	TEXT_VIEW,
+	TRANSLATE_VIEW,
+	HISTORY_VIEW,
+}
+
+var activeIndex = 0
+
+type UI struct {
+	YDict     *YDict
+	DBConnect *DBConnect
+}
+
+func NewUI(yd *YDict, dbc *DBConnect) *UI {
 	return &UI{yd, dbc}
 }
 
@@ -36,16 +53,16 @@ func (ui *UI) Run() {
 
 	g.SetManagerFunc(layout)
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, ui.quit); err != nil {
+	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlC, gocui.ModNone, ui.quit); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, ui.nextView); err != nil {
+	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, ui.nextView); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("text", gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
+	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("text", gocui.KeyEsc, gocui.ModNone, ui.cleanView); err != nil {
+	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEsc, gocui.ModNone, ui.cleanView); err != nil {
 		log.Panicln(err)
 	}
 
@@ -64,101 +81,113 @@ func (ui *UI) cleanView(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (ui *UI) nextView(g *gocui.Gui, v *gocui.View) error {
-	nextIndex := (active + 1) % len(viewArr)
-	name := viewArr[nextIndex]
 
-	out, err := g.View("translate")
-	if err != nil {
-		return err
-	}
-	fmt.Fprintln(out, "Going from view "+v.Name()+" to "+name)
+	nextIndex := (activeIndex + 1) % len(VIEW_TITLES)
+	//name := VIEW_TITLES[nextIndex]
 
-	if _, err := setCurrentViewOnTop(g, name); err != nil {
+	//_, err := g.SetCurrentView(VIEWS[nextIndex])
+
+	if _, err := setCurrentViewOnTop(g, VIEWS[nextIndex]); err != nil {
 		return err
 	}
 
+	//todo check this place when will be need to enable cursor on view
 	if nextIndex == 0 || nextIndex == 3 {
 		g.Cursor = true
 	} else {
 		g.Cursor = false
 	}
 
-	active = nextIndex
+	activeIndex = nextIndex
 	return nil
 }
 
 func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
-
-	g.Update(func(g *gocui.Gui) error {
-
-		translateView, err := g.View("translate")
+	//extract text from TEXT view
+	textFromTextView := getViewValue(g, TEXT_VIEW)
+	// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
+	go g.Update(func(g *gocui.Gui) error {
+		translateView, err := g.View(TRANSLATE_VIEW)
 		if err != nil {
 			return err
 		}
 
-		word, err := translate(ui.YandexDict, ui.DBConnect, getViewValue(g, "text"))
-		_, err = json.MarshalIndent(&word, "", "\t")
+		fmt.Fprintln(translateView, "...translated...")
+
+		word, err := translate(ui.YDict, ui.DBConnect, textFromTextView)
 		if err != nil {
-			fmt.Println("error:", err)
+			fmt.Fprintln(translateView, "...error on translate text...")
 		}
 
 		translateView.Clear()
 
-		//valueFromTextView := getViewValue(g, "text")
-		fmt.Fprintln(translateView, word.Translate[0].Tr[0].Text)
-		//cleanView(g, text)
+		if !word.isEmpty() {
+			fmt.Fprintln(translateView, printWord(word))
+		} else {
+			fmt.Fprintln(translateView, "...translate not found...")
+		}
+
 		return nil
 	})
+	//push text to HISTORY view
+	go func() {
+		g.Update(func(g *gocui.Gui) error {
+			historyView, err := g.View(HISTORY_VIEW)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintln(historyView, textFromTextView)
+			return nil
+		})
+	}()
 	return nil
 }
 
 func layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
-	if v, err := g.SetView("text", 0, 0, maxX/2-1, maxY/2-1); err != nil {
+	if v, err := g.SetView(TEXT_VIEW, 0, 0, maxX/2-1, maxY/2-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		v.Title = "Text"
+		v.Title = VIEW_TITLES[TEXT_VIEW]
 		v.Editable = true
 		v.Wrap = true
-		//v.Highlight = true
 
-		if _, err = setCurrentViewOnTop(g, "text"); err != nil {
+		if _, err = setCurrentViewOnTop(g, TEXT_VIEW); err != nil {
 			return err
 		}
 	}
 
-	if v, err := g.SetView("translate", maxX/2, 0, maxX-1, maxY-1); err != nil {
+	if v, err := g.SetView(TRANSLATE_VIEW, maxX/2, 0, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		v.Title = "Translate"
+		v.Title = VIEW_TITLES[TRANSLATE_VIEW]
 		v.Wrap = true
 		v.Autoscroll = true
 	}
-	if v, err := g.SetView("history", 0, maxY/2, maxX/2-1, maxY-1); err != nil {
+	if v, err := g.SetView(HISTORY_VIEW, 0, maxY/2, maxX/2-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		v.Title = "History"
+		v.Title = VIEW_TITLES[HISTORY_VIEW]
 		v.Wrap = true
 		v.Autoscroll = true
-		fmt.Fprint(v, "Press TAB to change current view")
 	}
-
 	return nil
 }
 
 func (ui *UI) quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
-
-func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
-	if _, err := g.SetCurrentView(name); err != nil {
-		return nil, err
-	}
-	return g.SetViewOnTop(name)
-}
+//
+//func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
+//	if _, err := g.SetCurrentView(name); err != nil {
+//		return nil, err
+//	}
+//	return g.SetViewOnTop(name)
+//}
 
 func getViewValue(g *gocui.Gui, name string) string {
 	v, err := g.View(name)
@@ -168,79 +197,63 @@ func getViewValue(g *gocui.Gui, name string) string {
 	return strings.TrimSpace(v.Buffer())
 }
 
-func setViewDefaults(v *gocui.View) {
-	v.Frame = true
-	v.Wrap = false
-}
-
-func setViewTextAndCursor(v *gocui.View, s string) {
-	v.Clear()
-	fmt.Fprint(v, s)
-	v.SetCursor(len(s), 0)
-}
-
-func translate(yandex *YandexDict, db *DBConnect, text string) (*Word, error) {
-	//for {
-	//	validate := func(input string) error {
-	//		if len(input) < 2 || len(input) > 25 {
-	//			return errors.New("From 2 to 25 symbols\n")
-	//		}
-	//		_, err := strconv.ParseFloat(input, 64)
-	//		if err == nil {
-	//			return errors.New("Not numbers\n")
-	//		}
-	//		return nil
-	//	}
-
-	//validate(word)
-	//
-	//prompt := promptui.Prompt{
-	//	Label:    "Word",
-	//	Validate: validate,
-	//}
-	//
-	//result, err := prompt.Run()
-	//if err != nil {
-	//	fmt.Printf("Error on read word, %v\n", err)
-	//	return
-	//}
-
+func translate(yd *YDict, db *DBConnect, text string) (*Word, error) {
 	word, err := db.GetWords(text)
 	if err != nil {
 		return nil, err
-		//fmt.Printf("Error on translate word=%s\n", text)
 	}
 
-	if word != nil && word.Translate != nil && len(word.Translate) > 0 {
-		//printWord(word)
+	if !word.isEmpty() {
 		return word, nil
-		//continue
 	}
 
-	fmt.Printf("Will be translate throw YandexDict\n")
-
-	tr, err := yandex.translate(text)
+	tr, err := yd.translate(text)
 	if err != nil {
-		fmt.Printf("Error on translate word=%s\n", text)
+		log.Printf("Error on translate word, err=%v", err)
 		return nil, err
-		//continue
-		//todo тут можно сделать зарпос на попытку повторного перевода
 	}
 
 	word, err = db.AddWord(Word{text, "Default", "Default", tr.Def})
 	if err != nil {
-		fmt.Printf("Error on save word=%s in db\n", text)
+		log.Printf("Error on add word in DB, err=%v", err)
 		return nil, err
-		//continue
-	}
-
-	if word == nil || word.Translate == nil || len(word.Translate) == 0 {
-		fmt.Printf("Translate not found\n")
-		return nil, nil
-		//continue
 	}
 
 	return word, nil
-	//printWord(word)
-	//}
+}
+
+func printWord(word *Word) string {
+	var buf bytes.Buffer
+
+	buf.WriteString(word.Translate[0].Tr[0].Text + "\n")
+	buf.WriteString("\n")
+
+	for _, w := range word.Translate {
+		buf.WriteString(fmt.Sprintf("%s [%s] %s\n", w.Text, w.Ts, w.Pos))
+		for i, t := range w.Tr {
+			buf.WriteString(fmt.Sprintf("%d  %s %s", i+1, t.Text, t.Gen))
+			if len(t.Syn) > 0 {
+				for _, s := range t.Syn {
+					buf.WriteString(fmt.Sprintf(", %s %s", s.Text, t.Gen))
+				}
+				fmt.Printf("\n")
+				if len(t.Mean) > 0 {
+					buf.WriteString(fmt.Sprintf("("))
+					for im, s := range t.Mean {
+						if im+1 != len(t.Mean) {
+							buf.WriteString(fmt.Sprintf("%s, ", s.Text))
+						} else {
+							buf.WriteString(fmt.Sprintf("%s", s.Text))
+						}
+					}
+					buf.WriteString(fmt.Sprintf(")\n"))
+				}
+			} else {
+				buf.WriteString(fmt.Sprintf("\n"))
+			}
+
+		}
+		buf.WriteString(fmt.Sprintf("\n"))
+	}
+	return buf.String()
 }

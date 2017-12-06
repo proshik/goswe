@@ -13,6 +13,13 @@ type Word struct {
 	Translate   []Def  `json:"translate"`
 }
 
+func (w *Word) isEmpty() bool {
+	if w != nil && w.Translate != nil && len(w.Translate) > 0 {
+		return false
+	}
+	return true
+}
+
 type Translate struct {
 	Head Head  `json:"head"`
 	Def  []Def `json:"def"`
