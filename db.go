@@ -8,7 +8,9 @@ import (
 	"time"
 )
 
-var wordsBucket = "words"
+const (
+	WORDS_BUCKET = "words"
+)
 
 type DBConnect struct {
 	path string
@@ -22,7 +24,7 @@ func NewDB(path string) *DBConnect {
 	defer db.Close()
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(wordsBucket))
+		_, err := tx.CreateBucketIfNotExists([]byte(WORDS_BUCKET))
 		return err
 	})
 	if err != nil {
@@ -41,7 +43,7 @@ func (c *DBConnect) AddWord(word Word) (*Word, error) {
 	defer db.Close()
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(wordsBucket))
+		b := tx.Bucket([]byte(WORDS_BUCKET))
 
 		// Marshal user data into bytes.
 		buf, err := json.Marshal(&word)
@@ -71,7 +73,7 @@ func (c *DBConnect) CountWords() (int, error) {
 
 	var count int
 	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(wordsBucket))
+		b := tx.Bucket([]byte(WORDS_BUCKET))
 
 		count = b.Stats().KeyN
 
@@ -95,7 +97,7 @@ func (c *DBConnect) GetWords(text string) (*Word, error) {
 
 	var data []byte
 	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(wordsBucket))
+		b := tx.Bucket([]byte(WORDS_BUCKET))
 		data = b.Get([]byte(text))
 		return nil
 	})

@@ -181,6 +181,7 @@ func layout(g *gocui.Gui) error {
 func (ui *UI) quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
+
 //
 //func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
 //	if _, err := g.SetCurrentView(name); err != nil {

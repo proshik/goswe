@@ -1,12 +1,12 @@
 package main
 
 import (
-	"os"
+	"bufio"
 	"encoding/json"
-	"log"
 	"fmt"
 	"io/ioutil"
-	"bufio"
+	"log"
+	"os"
 	"strings"
 )
 
