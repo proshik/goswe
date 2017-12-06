@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
+	"github.com/pkg/errors"
 	"log"
 	"strings"
 )
@@ -30,6 +32,18 @@ var VIEWS = []string{
 
 var activeIndex = 0
 
+var optionsDetectLang = whatlanggo.Options{
+	Whitelist: map[whatlanggo.Lang]bool{
+		whatlanggo.Eng: true,
+		whatlanggo.Rus: true,
+	},
+}
+
+type TranslateLangOpt struct {
+	source      string
+	destination string
+}
+
 type UI struct {
 	YDict     *YDict
 	DBConnect *DBConnect
@@ -53,16 +67,16 @@ func (ui *UI) Run() {
 
 	g.SetManagerFunc(layout)
 
-	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlC, gocui.ModNone, ui.quit); err != nil {
-		log.Panicln(err)
-	}
-	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, ui.nextView); err != nil {
+	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, nextView); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEsc, gocui.ModNone, ui.cleanView); err != nil {
+	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEsc, gocui.ModNone, cleanView); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 
@@ -71,38 +85,17 @@ func (ui *UI) Run() {
 	}
 }
 
-func (ui *UI) cleanView(g *gocui.Gui, v *gocui.View) error {
-	g.Update(func(g *gocui.Gui) error {
-		v.Clear()
-		v.SetCursor(0, 0)
-		return nil
-	})
-	return nil
-}
-
-func (ui *UI) nextView(g *gocui.Gui, v *gocui.View) error {
-	nextIndex := (activeIndex + 1) % len(VIEW_TITLES)
-
-	if _, err := g.SetCurrentView(VIEWS[nextIndex]); err != nil {
-		return err
-	}
-
-	//todo check this place when will be need to enable cursor on view
-	if nextIndex == 0 || nextIndex == 3 {
-		g.Cursor = true
-	} else {
-		g.Cursor = false
-	}
-
-	activeIndex = nextIndex
-	return nil
-}
-
 func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 	//extract text from TEXT view
 	textFromTextView := getViewValue(g, TEXT_VIEW)
 	if textFromTextView == "" {
 		return nil
+	}
+	//detect a language in text
+	info := whatlanggo.DetectLangWithOptions(textFromTextView, optionsDetectLang)
+	langOpt, err := createTranslateLangOpt(info)
+	if err != nil {
+		return err
 	}
 	// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
 	go g.Update(func(g *gocui.Gui) error {
@@ -112,7 +105,7 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		}
 
 		//fmt.Fprintln(translateView, "...translated...")
-		word, err := translate(ui.YDict, ui.DBConnect, textFromTextView)
+		word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
 		if err != nil {
 			fmt.Fprintln(translateView, "...error on translate text...")
 		}
@@ -140,6 +133,72 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		})
 	}()
 	return nil
+}
+
+func (ui *UI) translate(text string, langFrom string, langTo string) (*Word, error) {
+	word, err := ui.DBConnect.GetWords(text)
+	if err != nil {
+		return nil, err
+	}
+
+	if !word.isEmpty() {
+		return word, nil
+	}
+
+	tr, err := ui.YDict.translate(text, langFrom, langTo)
+	if err != nil {
+		log.Printf("Error on translate word, err=%v", err)
+		return nil, err
+	}
+
+	word, err = ui.DBConnect.AddWord(Word{text, "Default", "Default", tr.Def})
+	if err != nil {
+		log.Printf("Error on add word in DB, err=%v", err)
+		return nil, err
+	}
+
+	return word, nil
+}
+
+func cleanView(g *gocui.Gui, v *gocui.View) error {
+	g.Update(func(g *gocui.Gui) error {
+		v.Clear()
+		v.SetCursor(0, 0)
+		return nil
+	})
+	return nil
+}
+
+func nextView(g *gocui.Gui, v *gocui.View) error {
+	nextIndex := (activeIndex + 1) % len(VIEW_TITLES)
+
+	if _, err := g.SetCurrentView(VIEWS[nextIndex]); err != nil {
+		return err
+	}
+
+	//todo check this place when will be need to enable cursor on view
+	if nextIndex == 0 || nextIndex == 3 {
+		g.Cursor = true
+	} else {
+		g.Cursor = false
+	}
+
+	activeIndex = nextIndex
+	return nil
+}
+
+func quit(g *gocui.Gui, v *gocui.View) error {
+	return gocui.ErrQuit
+}
+
+func createTranslateLangOpt(lang whatlanggo.Lang) (*TranslateLangOpt, error) {
+	switch lang {
+	case whatlanggo.Rus:
+		return &TranslateLangOpt{"ru", "en"}, nil
+	case whatlanggo.Eng:
+		return &TranslateLangOpt{"en", "ru"}, nil
+	}
+	return nil, errors.New(fmt.Sprintf("Unrecognize unexpected language=%s", whatlanggo.LangToString(lang)))
 }
 
 func layout(g *gocui.Gui) error {
@@ -176,41 +235,12 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (ui *UI) quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
-}
-
 func getViewValue(g *gocui.Gui, name string) string {
 	v, err := g.View(name)
 	if err != nil {
 		return ""
 	}
 	return strings.TrimSpace(v.Buffer())
-}
-
-func translate(yd *YDict, db *DBConnect, text string) (*Word, error) {
-	word, err := db.GetWords(text)
-	if err != nil {
-		return nil, err
-	}
-
-	if !word.isEmpty() {
-		return word, nil
-	}
-
-	tr, err := yd.translate(text)
-	if err != nil {
-		log.Printf("Error on translate word, err=%v", err)
-		return nil, err
-	}
-
-	word, err = db.AddWord(Word{text, "Default", "Default", tr.Def})
-	if err != nil {
-		log.Printf("Error on add word in DB, err=%v", err)
-		return nil, err
-	}
-
-	return word, nil
 }
 
 func printWord(word *Word) string {

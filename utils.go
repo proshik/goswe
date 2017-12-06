@@ -25,7 +25,7 @@ func fillBasicEnglishWords(yandex *YDict, db *DBConnect) {
 	}
 
 	for _, rw := range rawWords {
-		tr, err := yandex.translate(rw.Text)
+		tr, err := yandex.translate(rw.Text, "en", "ru")
 		if err != nil {
 			log.Fatalf("Error on word=%s, with error=%v", rw.Text, err)
 		}

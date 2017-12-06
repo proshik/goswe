@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -13,9 +14,12 @@ func NewYDict(token string) *YDict {
 	return &YDict{token}
 }
 
-func (yDict *YDict) translate(text string) (*Translate, error) {
+func (yDict *YDict) translate(text string, langFrom string, langTo string) (*Translate, error) {
 
-	resp, err := http.Get("https://dictionary.yandex.net/api/v1/dicservice.json/lookup?lang=en-ru&key=" + yDict.Token + "&text=" + text)
+	url := fmt.Sprintf("https://dictionary.yandex.net/api/v1/dicservice.json/lookup?"+
+		"lang=%s-%s&key=%s&text=%s", langFrom, langTo, yDict.Token, text)
+
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
