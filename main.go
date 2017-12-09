@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"github.com/proshik/goswe/yandex"
-	view "github.com/proshik/goswe/view"
+	"github.com/proshik/goswe/view"
 )
 
 var VERSION = "0.1.1"
@@ -19,7 +19,6 @@ type Config struct {
 }
 
 func main() {
-
 	var yDictToken string
 	var yTranslatorToken string
 

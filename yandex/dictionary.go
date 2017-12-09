@@ -15,7 +15,7 @@ func NewYDictionary(token string) *YDictionary {
 	return &YDictionary{token}
 }
 
-func (yDict *YDictionary) Translate(text string, langFrom string, langTo string) (*model.Translate, error) {
+func (yDict *YDictionary) Translate(text string, langFrom string, langTo string) (*model.Dictionary, error) {
 
 	url := fmt.Sprintf("https://dictionary.yandex.net/api/v1/dicservice.json/lookup?"+
 		"lang=%s-%s&key=%s&text=%s", langFrom, langTo, yDict.token, text)
@@ -29,7 +29,7 @@ func (yDict *YDictionary) Translate(text string, langFrom string, langTo string)
 
 	d := json.NewDecoder(resp.Body)
 
-	var tr model.Translate
+	var tr model.Dictionary
 	err = d.Decode(&tr)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"github.com/proshik/goswe/yandex"
 	"github.com/proshik/goswe/model"
+	_"bufio"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 
 var VIEW_TITLES = map[string]string{
 	TEXT_VIEW:      "Text",
-	TRANSLATE_VIEW: "Translate",
+	TRANSLATE_VIEW: "Dictionary",
 	HISTORY_VIEW:   "History",
 }
 
@@ -71,7 +72,7 @@ func (ui *UI) Run() {
 	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, nextView); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
+	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyCtrlY, gocui.ModNone, ui.handleText); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEsc, gocui.ModNone, cleanView); err != nil {
@@ -105,6 +106,26 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 
+		//_ := strings.NewReader(textFromTextView)
+		////scaner := bufio.NewScanner(reader)
+		//
+		//scanner := bufio.NewScanner(strings.NewReader(textFromTextView))
+		//scanner.Split(bufio.ScanLines)
+		//for scanner.Scan() {
+		//	fmt.Println(scanner.Text())
+		//}
+
+
+		mayBeWord := maybeWord(textFromTextView)
+
+		fmt.Printf("value: %s, len=%d, maybe=%s\n", textFromTextView, len(textFromTextView), mayBeWord)
+
+		textFromTextView = strings.Replace(textFromTextView, "\n", " ", -1)
+
+		fmt.Printf("value: %s, len=%d, maybe=%s\n", textFromTextView, len(textFromTextView), mayBeWord)
+
+		fmt.Printf("contains=%s", strings.Contains(textFromTextView, "\n"))
+
 		//fmt.Fprintln(translateView, "...translated...")
 		word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
 		if err != nil {
@@ -134,6 +155,12 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		})
 	}()
 	return nil
+}
+func maybeWord(text string) bool {
+	if len(text) < 27 {
+		return true
+	}
+	return false
 }
 
 func (ui *UI) translate(text string, langFrom string, langTo string) (*model.Word, error) {

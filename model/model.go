@@ -20,7 +20,15 @@ func (w *Word) IsEmpty() bool {
 	return true
 }
 
+//For Yandex translator API
 type Translate struct {
+	Code string `json:"code"`
+	Lang string `json:"lang"`
+	Text []string `json:"text"`
+}
+
+//For Yandex dictionary API
+type Dictionary struct {
 	Head Head  `json:"head"`
 	Def  []Def `json:"def"`
 }
