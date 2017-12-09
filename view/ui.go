@@ -1,15 +1,15 @@
 package view
 
 import (
+	_ "encoding/json"
 	"fmt"
 	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
 	"github.com/pkg/errors"
+	"github.com/proshik/goswe/model"
+	"github.com/proshik/goswe/yandex"
 	"log"
 	"strings"
-	"github.com/proshik/goswe/yandex"
-	"github.com/proshik/goswe/model"
-	_"encoding/json"
 )
 
 const (
@@ -249,7 +249,6 @@ func getViewValue(g *gocui.Gui, name string) string {
 	}
 	return strings.TrimSpace(v.Buffer())
 }
-
 
 //b, err := json.MarshalIndent(&word, "", "\t")
 //if err != nil {

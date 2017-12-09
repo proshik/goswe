@@ -12,7 +12,7 @@ type TranslatedText interface {
 
 //For Yandex translator API
 type Translate struct {
-	Code int   `json:"code"`
+	Code int      `json:"code"`
 	Lang string   `json:"lang"`
 	Text []string `json:"text"`
 }

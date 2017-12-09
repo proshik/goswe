@@ -1,12 +1,12 @@
 package yandex
 
 import (
-	"fmt"
-	"net/http"
 	"encoding/json"
-	"strings"
-	"net/url"
+	"fmt"
 	"github.com/proshik/goswe/model"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type YTranslator struct {

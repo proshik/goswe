@@ -1,14 +1,14 @@
 package main
 
 import (
-	"os"
-	"github.com/urfave/cli"
-	"log"
-	"os/user"
-	"io/ioutil"
 	"encoding/json"
-	"github.com/proshik/goswe/yandex"
 	"github.com/proshik/goswe/view"
+	"github.com/proshik/goswe/yandex"
+	"github.com/urfave/cli"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/user"
 )
 
 var VERSION = "0.1.1"

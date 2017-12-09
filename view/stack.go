@@ -1,13 +1,13 @@
 package view
 
 type Stack struct {
-	top *element
+	top  *element
 	size int
 }
 
 type element struct {
 	value string // All types satisfy the empty interface, so we can store anything here.
-	next *element
+	next  *element
 }
 
 // Return the stack's length

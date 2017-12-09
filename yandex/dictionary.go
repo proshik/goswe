@@ -3,8 +3,8 @@ package yandex
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"github.com/proshik/goswe/model"
+	"net/http"
 )
 
 type YDictionary struct {
