@@ -89,7 +89,8 @@ func main() {
 	app.Run(os.Args)
 
 	yDict := yandex.NewYDictionary(yDictToken)
-	ui := view.NewUI(yDict)
+	yTr := yandex.NewYTranslator(yTranslatorToken)
+	ui := view.NewUI(yDict, yTr)
 
 	ui.Run()
 }

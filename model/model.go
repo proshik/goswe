@@ -1,36 +1,80 @@
 package model
 
-type RawWord struct {
-	Text        string `json:"text"`
-	Category    string `json:"category"`
-	Subcategory string `json:"subcategory"`
-}
+import (
+	"bytes"
+	"fmt"
+)
 
-type Word struct {
-	Text        string `json:"text"`
-	Category    string `json:"category"`
-	Subcategory string `json:"subcategory"`
-	Translate   []Def  `json:"translate"`
-}
-
-func (w *Word) IsEmpty() bool {
-	if w != nil && w.Translate != nil && len(w.Translate) > 0 {
-		return false
-	}
-	return true
+type TranslatedText interface {
+	Print() string
+	IsEmpty() bool
 }
 
 //For Yandex translator API
 type Translate struct {
-	Code string `json:"code"`
-	Lang string `json:"lang"`
+	Code int   `json:"code"`
+	Lang string   `json:"lang"`
 	Text []string `json:"text"`
+}
+
+func (w *Translate) Print() string {
+	return w.Text[0]
+}
+
+func (w *Translate) IsEmpty() bool {
+	if w != nil && len(w.Text) > 0 {
+		return false
+	}
+	return true
 }
 
 //For Yandex dictionary API
 type Dictionary struct {
 	Head Head  `json:"head"`
 	Def  []Def `json:"def"`
+}
+
+func (w *Dictionary) Print() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(w.Def[0].Tr[0].Text + "\n")
+	buf.WriteString("\n")
+
+	for _, w := range w.Def {
+		buf.WriteString(fmt.Sprintf("%s [%s] %s\n", w.Text, w.Ts, w.Pos))
+		for i, t := range w.Tr {
+			buf.WriteString(fmt.Sprintf("%d  %s %s", i+1, t.Text, t.Gen))
+			if len(t.Syn) > 0 {
+				for _, s := range t.Syn {
+					buf.WriteString(fmt.Sprintf(", %s %s", s.Text, t.Gen))
+				}
+				fmt.Printf("\n")
+				if len(t.Mean) > 0 {
+					buf.WriteString(fmt.Sprintf("("))
+					for im, s := range t.Mean {
+						if im+1 != len(t.Mean) {
+							buf.WriteString(fmt.Sprintf("%s, ", s.Text))
+						} else {
+							buf.WriteString(fmt.Sprintf("%s", s.Text))
+						}
+					}
+					buf.WriteString(fmt.Sprintf(")\n"))
+				}
+			} else {
+				buf.WriteString(fmt.Sprintf("\n"))
+			}
+
+		}
+		buf.WriteString(fmt.Sprintf("\n"))
+	}
+	return buf.String()
+}
+
+func (w *Dictionary) IsEmpty() bool {
+	if w != nil && w.Def != nil && len(w.Def) > 0 {
+		return false
+	}
+	return true
 }
 
 type Head struct{}

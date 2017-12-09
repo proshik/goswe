@@ -1,7 +1,6 @@
 package view
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
@@ -10,7 +9,7 @@ import (
 	"strings"
 	"github.com/proshik/goswe/yandex"
 	"github.com/proshik/goswe/model"
-	_"bufio"
+	_"encoding/json"
 )
 
 const (
@@ -49,10 +48,11 @@ type TranslateLangOpt struct {
 
 type UI struct {
 	YDict *yandex.YDictionary
+	YTr   *yandex.YTranslator
 }
 
-func NewUI(yd *yandex.YDictionary) *UI {
-	return &UI{yd}
+func NewUI(yd *yandex.YDictionary, yt *yandex.YTranslator) *UI {
+	return &UI{yd, yt}
 }
 
 func (ui *UI) Run() {
@@ -106,26 +106,6 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 			return err
 		}
 
-		//_ := strings.NewReader(textFromTextView)
-		////scaner := bufio.NewScanner(reader)
-		//
-		//scanner := bufio.NewScanner(strings.NewReader(textFromTextView))
-		//scanner.Split(bufio.ScanLines)
-		//for scanner.Scan() {
-		//	fmt.Println(scanner.Text())
-		//}
-
-
-		mayBeWord := maybeWord(textFromTextView)
-
-		fmt.Printf("value: %s, len=%d, maybe=%s\n", textFromTextView, len(textFromTextView), mayBeWord)
-
-		textFromTextView = strings.Replace(textFromTextView, "\n", " ", -1)
-
-		fmt.Printf("value: %s, len=%d, maybe=%s\n", textFromTextView, len(textFromTextView), mayBeWord)
-
-		fmt.Printf("contains=%s", strings.Contains(textFromTextView, "\n"))
-
 		//fmt.Fprintln(translateView, "...translated...")
 		word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
 		if err != nil {
@@ -135,7 +115,7 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		translateView.Clear()
 
 		if !word.IsEmpty() {
-			fmt.Fprintln(translateView, printWord(word))
+			fmt.Fprintln(translateView, word.Print())
 		} else {
 			fmt.Fprintln(translateView, "...translate not found...")
 		}
@@ -143,17 +123,17 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	})
 	//push text to HISTORY view
-	go func() {
-		g.Update(func(g *gocui.Gui) error {
-			historyView, err := g.View(HISTORY_VIEW)
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintln(historyView, textFromTextView)
-			return nil
-		})
-	}()
+	//go func() {
+	//	g.Update(func(g *gocui.Gui) error {
+	//		historyView, err := g.View(HISTORY_VIEW)
+	//		if err != nil {
+	//			return err
+	//		}
+	//
+	//		fmt.Fprintln(historyView, textFromTextView)
+	//		return nil
+	//	})
+	//}()
 	return nil
 }
 func maybeWord(text string) bool {
@@ -163,29 +143,28 @@ func maybeWord(text string) bool {
 	return false
 }
 
-func (ui *UI) translate(text string, langFrom string, langTo string) (*model.Word, error) {
-	//word, err := ui.DBConnect.GetWords(text)
-	//if err != nil {
-	//	return nil, err
-	//}
+func (ui *UI) translate(text string, langFrom string, langTo string) (model.TranslatedText, error) {
+	mayBeWord := maybeWord(text)
+	containsCaret := strings.Contains(text, "\n")
+	//check on word and not contains \n symbol
+	if mayBeWord && !containsCaret {
+		tr, err := ui.YDict.Translate(text, langFrom, langTo)
+		if err != nil {
+			log.Printf("Error on translate word throw Dictionary, err=%v", err)
+			return nil, err
+		}
 
-	//if !word.isEmpty() {
-	//	return word, nil
-	//}
-
-	tr, err := ui.YDict.Translate(text, langFrom, langTo)
+		if !tr.IsEmpty() {
+			return tr, nil
+		}
+	}
+	//now try translate throw yandex Translator
+	tr, err := ui.YTr.Translate(text, langFrom, langTo)
 	if err != nil {
-		log.Printf("Error on translate word, err=%v", err)
+		log.Printf("Error on translate word throw Translator, err=%v", err)
 		return nil, err
 	}
-	//
-	//word, err = ui.DBConnect.AddWord(Word{text, "Default", "Default", tr.Def})
-	//if err != nil {
-	//	log.Printf("Error on add word in DB, err=%v", err)
-	//	return nil, err
-	//}
-
-	return &model.Word{text, "Default", "Default", tr.Def}, nil
+	return tr, nil
 }
 
 func cleanView(g *gocui.Gui, v *gocui.View) error {
@@ -215,7 +194,7 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
+func quit(_ *gocui.Gui, _ *gocui.View) error {
 	return gocui.ErrQuit
 }
 
@@ -271,38 +250,10 @@ func getViewValue(g *gocui.Gui, name string) string {
 	return strings.TrimSpace(v.Buffer())
 }
 
-func printWord(word *model.Word) string {
-	var buf bytes.Buffer
 
-	buf.WriteString(word.Translate[0].Tr[0].Text + "\n")
-	buf.WriteString("\n")
-
-	for _, w := range word.Translate {
-		buf.WriteString(fmt.Sprintf("%s [%s] %s\n", w.Text, w.Ts, w.Pos))
-		for i, t := range w.Tr {
-			buf.WriteString(fmt.Sprintf("%d  %s %s", i+1, t.Text, t.Gen))
-			if len(t.Syn) > 0 {
-				for _, s := range t.Syn {
-					buf.WriteString(fmt.Sprintf(", %s %s", s.Text, t.Gen))
-				}
-				fmt.Printf("\n")
-				if len(t.Mean) > 0 {
-					buf.WriteString(fmt.Sprintf("("))
-					for im, s := range t.Mean {
-						if im+1 != len(t.Mean) {
-							buf.WriteString(fmt.Sprintf("%s, ", s.Text))
-						} else {
-							buf.WriteString(fmt.Sprintf("%s", s.Text))
-						}
-					}
-					buf.WriteString(fmt.Sprintf(")\n"))
-				}
-			} else {
-				buf.WriteString(fmt.Sprintf("\n"))
-			}
-
-		}
-		buf.WriteString(fmt.Sprintf("\n"))
-	}
-	return buf.String()
-}
+//b, err := json.MarshalIndent(&word, "", "\t")
+//if err != nil {
+//	fmt.Println("error:", err)
+//}
+//
+//fmt.Println(string(b))

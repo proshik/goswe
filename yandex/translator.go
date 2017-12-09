@@ -17,7 +17,7 @@ func NewYTranslator(token string) *YTranslator {
 	return &YTranslator{token}
 }
 
-func (y *YTranslator) translate(text string, langFrom string, langTo string) (*model.Translate, error) {
+func (y *YTranslator) Translate(text string, langFrom string, langTo string) (model.TranslatedText, error) {
 
 	urlPath := fmt.Sprintf("https://translate.yandex.net/api/v1.5/tr.json/translate?"+
 		"lang=%s-%s&key=%s", langFrom, langTo, y.Token)
