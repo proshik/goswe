@@ -18,7 +18,7 @@
 .idea
 
 #Other files
-run.txt
+../goland/boltdb/run.txt
 result.json
 words
 database_bw.db
