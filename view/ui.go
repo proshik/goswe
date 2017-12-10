@@ -1,7 +1,6 @@
 package view
 
 import (
-	_ "encoding/json"
 	"fmt"
 	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
@@ -72,7 +71,7 @@ func (ui *UI) Run() {
 	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, nextView); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyCtrlY, gocui.ModNone, ui.handleText); err != nil {
+	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEsc, gocui.ModNone, cleanView); err != nil {
@@ -217,6 +216,8 @@ func layout(g *gocui.Gui) error {
 		v.Title = VIEW_TITLES[TEXT_VIEW]
 		v.Editable = true
 		v.Wrap = true
+		v.Autoscroll = true
+		//v.Editor = &VimEditor{}
 
 		if _, err = g.SetCurrentView(TEXT_VIEW); err != nil {
 			return err
@@ -238,6 +239,17 @@ func layout(g *gocui.Gui) error {
 		v.Title = VIEW_TITLES[HISTORY_VIEW]
 		v.Wrap = true
 		v.Autoscroll = true
+
+		go g.Update(func(g *gocui.Gui) error {
+			historyView, err := g.View(HISTORY_VIEW)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintln(historyView, "...not implemented yet..")
+
+			return nil
+		})
 	}
 	return nil
 }
