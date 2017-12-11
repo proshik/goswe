@@ -6,9 +6,7 @@ import (
 	"github.com/proshik/goswe/yandex"
 	"github.com/urfave/cli"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/user"
 )
 
 var VERSION = "0.1.1"
@@ -23,8 +21,9 @@ func main() {
 	var yTranslatorToken string
 
 	app := cli.NewApp()
-	app.Usage = "translate ru/en words"
+	app.Usage = "TUI for translate words"
 	app.Version = VERSION
+
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -39,60 +38,75 @@ func main() {
 		},
 	}
 
-	app.Before = func(c *cli.Context) error {
-		usr, err := user.Current()
-		if err != nil {
-			log.Fatalf("Error, not found user home directory, %v", err)
-		}
-		configFilename := usr.HomeDir + "/.gotrew/config.json"
+	app.Commands = []cli.Command{
+		{
+			Name:    "translate",
+			Usage:   "translate words",
+			Before:  func(c *cli.Context) error {
+				yDict := yandex.NewYDictionary(yDictToken)
+				yTr := yandex.NewYTranslator(yTranslatorToken)
+				ui := view.NewUI(yDict, yTr)
 
-		config := extractConfigValue(configFilename)
-		if config != nil {
-			yDictToken = config.YDictToken
-			yTranslatorToken = config.YTranslatorToken
-			return nil
-		}
-
-		if yDictToken == "" || yTranslatorToken == "" {
-			log.Fatal("GOTREW requires exactly 2 arguments.\n\nSee 'gotrew --help'.")
-		}
-
-		config = &Config{YDictToken: yDictToken, YTranslatorToken: yTranslatorToken}
-
-		data, err := json.Marshal(&config)
-		if err != nil {
-			log.Fatalf("Error on save token data in file by path=%s", configFilename)
-		}
-
-		err = os.MkdirAll(usr.HomeDir+"/.gotrew", 0755)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		file, err := os.Create(configFilename)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer file.Close()
-
-		file.Chmod(0755)
-		_, err = file.Write(data)
-		if err != nil {
-			log.Fatal(err)
-		}
-		file.Sync()
-
-		return nil
+				ui.Run()
+				return nil
+			},
+		},
+		//{
+		//	Name:    "config",
+		//	Usage:   "add a task to the list",
+		//	Subcommands:
+		//},
 	}
 
 	app.Run(os.Args)
 
-	yDict := yandex.NewYDictionary(yDictToken)
-	yTr := yandex.NewYTranslator(yTranslatorToken)
-	ui := view.NewUI(yDict, yTr)
+	//app.Before = func(c *cli.Context) error {
+	//	usr, err := user.Current()
+	//	if err != nil {
+	//		log.Fatalf("Error, not found user home directory, %v", err)
+	//	}
+	//	configFilename := usr.HomeDir + "/.gotrew/config.json"
+	//
+	//	config := extractConfigValue(configFilename)
+	//	if config != nil {
+	//		yDictToken = config.YDictToken
+	//		yTranslatorToken = config.YTranslatorToken
+	//		return nil
+	//	}
+	//
+	//	if yDictToken == "" || yTranslatorToken == "" {
+	//		log.Fatal("GOTREW requires exactly 2 arguments.\n\nSee 'gotrew --help'.")
+	//	}
+	//
+	//	config = &Config{YDictToken: yDictToken, YTranslatorToken: yTranslatorToken}
+	//
+	//	data, err := json.Marshal(&config)
+	//	if err != nil {
+	//		log.Fatalf("Error on save token data in file by path=%s", configFilename)
+	//	}
+	//
+	//	err = os.MkdirAll(usr.HomeDir+"/.gotrew", 0755)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//
+	//	file, err := os.Create(configFilename)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//
+	//	defer file.Close()
+	//
+	//	file.Chmod(0755)
+	//	_, err = file.Write(data)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	file.Sync()
+	//
+	//	return nil
+	//}
 
-	ui.Run()
 }
 func extractConfigValue(filename string) *Config {
 	configFile, err := ioutil.ReadFile(filename)

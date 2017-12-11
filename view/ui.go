@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
-	"github.com/pkg/errors"
 	"github.com/proshik/goswe/model"
 	"github.com/proshik/goswe/yandex"
 	"log"
 	"strings"
+	"errors"
 )
 
 const (
@@ -135,34 +135,30 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 	//}()
 	return nil
 }
-func maybeWord(text string) bool {
-	if len(text) < 27 {
-		return true
-	}
-	return false
-}
 
 func (ui *UI) translate(text string, langFrom string, langTo string) (model.TranslatedText, error) {
-	mayBeWord := maybeWord(text)
-	containsCaret := strings.Contains(text, "\n")
+	//mayBeWord := maybeWord(text)
+	//containsCaret := strings.Contains(text, "\n")
 	//check on word and not contains \n symbol
-	if mayBeWord && !containsCaret {
-		tr, err := ui.YDict.Translate(text, langFrom, langTo)
-		if err != nil {
-			log.Printf("Error on translate word throw Dictionary, err=%v", err)
-			return nil, err
-		}
-
-		if !tr.IsEmpty() {
-			return tr, nil
-		}
-	}
-	//now try translate throw yandex Translator
-	tr, err := ui.YTr.Translate(text, langFrom, langTo)
+	//if mayBeWord && !containsCaret {
+	tr, err := ui.YDict.Translate(text, langFrom, langTo)
 	if err != nil {
-		log.Printf("Error on translate word throw Translator, err=%v", err)
+		log.Printf("Error on translate word throw Dictionary, err=%v", err)
 		return nil, err
 	}
+	//if !tr.IsEmpty() {
+	//	return tr, nil
+	//}
+
+	//} else {
+	//
+	//}
+	//now try translate throw yandex Translator
+	//tr, err := ui.YTr.Translate(text, langFrom, langTo)
+	//if err != nil {
+	//	log.Printf("Error on translate word throw Translator, err=%v", err)
+	//	return nil, err
+	//}
 	return tr, nil
 }
 
@@ -260,6 +256,13 @@ func getViewValue(g *gocui.Gui, name string) string {
 		return ""
 	}
 	return strings.TrimSpace(v.Buffer())
+}
+
+func maybeWord(text string) bool {
+	if len(text) < 27 {
+		return true
+	}
+	return false
 }
 
 //b, err := json.MarshalIndent(&word, "", "\t")
