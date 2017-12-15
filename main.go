@@ -1,15 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"github.com/proshik/goswe/view"
 	"github.com/proshik/goswe/yandex"
 	"io/ioutil"
-	"os/user"
 	"os"
+	"os/user"
 	"path"
-	"bufio"
-	"fmt"
 )
 
 const (

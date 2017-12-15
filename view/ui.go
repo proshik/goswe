@@ -1,6 +1,7 @@
 package view
 
 import (
+	"errors"
 	"fmt"
 	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
@@ -8,7 +9,6 @@ import (
 	"github.com/proshik/goswe/yandex"
 	"log"
 	"strings"
-	"errors"
 )
 
 const (
