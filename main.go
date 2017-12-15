@@ -26,11 +26,15 @@ func main() {
 	config, err := readConfigFromFS()
 	if err != nil {
 		var yDictToken string
-		fmt.Printf("Yandex dictionary token:\n")
+		fmt.Printf("Please, enter Yandex dictionary token:\n")
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			yDictToken = scanner.Text()
-			break
+			if yDictToken == "" {
+				fmt.Printf("Yandex Dictionary API token not may be empty!\n")
+			} else {
+				break
+			}
 		}
 
 		config = &Config{yDictToken, ""}
