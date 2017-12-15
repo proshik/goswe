@@ -9,6 +9,7 @@ import (
 	"log"
 	"strings"
 	"errors"
+	"time"
 )
 
 const (
@@ -104,29 +105,52 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 	if err != nil {
 		return err
 	}
-	// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
-	go g.Update(func(g *gocui.Gui) error {
-		translateView, err := g.View(TRANSLATE_VIEW)
-		if err != nil {
-			return err
-		}
+	go func() {
+		g.Update(func(g *gocui.Gui) error {
+			translateView, err := g.View(TRANSLATE_VIEW)
+			if err != nil {
+				return err
+			}
 
-		//fmt.Fprintln(translateView, "...translated...")
+			translateView.Clear()
+
+			fmt.Fprintln(translateView, "...translated...")
+			return nil
+		})
+	}()
+
+	go func() {
 		word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
 		if err != nil {
-			fmt.Fprintln(translateView, "...error on translate text...")
+			g.Update(func(g *gocui.Gui) error {
+				translateView, err := g.View(TRANSLATE_VIEW)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintln(translateView, "...error on translate text...")
+				return nil
+			})
+			return
 		}
 
-		translateView.Clear()
+		// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
+		g.Update(func(g *gocui.Gui) error {
+			translateView, err := g.View(TRANSLATE_VIEW)
+			if err != nil {
+				return err
+			}
 
-		if !word.IsEmpty() {
-			fmt.Fprintln(translateView, word.Print())
-		} else {
-			fmt.Fprintln(translateView, "...translate not found...")
-		}
+			translateView.Clear()
 
-		return nil
-	})
+			if !word.IsEmpty() {
+				fmt.Fprintln(translateView, word.Print())
+			} else {
+				fmt.Fprintln(translateView, "...translate not found...")
+			}
+
+			return nil
+		})
+	}()
 	//push text to HISTORY view
 	go func() {
 		g.Update(func(g *gocui.Gui) error {
@@ -138,7 +162,7 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 			history = append(history, textFromTextView)
 
 			historyView.Clear()
-			for i := len(history)-1; i >= 0; i-- {
+			for i := len(history) - 1; i >= 0; i-- {
 				fmt.Fprintln(historyView, history[i])
 			}
 
