@@ -31,14 +31,16 @@ var VIEWS = []string{
 	HISTORY_VIEW,
 }
 
-var activeIndex = 0
-
-var optionsDetectLang = whatlanggo.Options{
+var OPTIONS_DETECT_LANG = whatlanggo.Options{
 	Whitelist: map[whatlanggo.Lang]bool{
 		whatlanggo.Eng: true,
 		whatlanggo.Rus: true,
 	},
 }
+
+var activeIndex = 0
+
+var history = make([]string, 0)
 
 type TranslateLangOpt struct {
 	source      string
@@ -97,7 +99,7 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 	//detect a language in text
-	info := whatlanggo.DetectLangWithOptions(textFromTextView, optionsDetectLang)
+	info := whatlanggo.DetectLangWithOptions(textFromTextView, OPTIONS_DETECT_LANG)
 	langOpt, err := createTranslateLangOpt(info)
 	if err != nil {
 		return err
@@ -126,17 +128,23 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	})
 	//push text to HISTORY view
-	//go func() {
-	//	g.Update(func(g *gocui.Gui) error {
-	//		historyView, err := g.View(HISTORY_VIEW)
-	//		if err != nil {
-	//			return err
-	//		}
-	//
-	//		fmt.Fprintln(historyView, textFromTextView)
-	//		return nil
-	//	})
-	//}()
+	go func() {
+		g.Update(func(g *gocui.Gui) error {
+			historyView, err := g.View(HISTORY_VIEW)
+			if err != nil {
+				return err
+			}
+
+			history = append(history, textFromTextView)
+
+			historyView.Clear()
+			for i := len(history)-1; i >= 0; i-- {
+				fmt.Fprintln(historyView, history[i])
+			}
+
+			return nil
+		})
+	}()
 	return nil
 }
 
@@ -239,17 +247,6 @@ func layout(g *gocui.Gui) error {
 		v.Title = VIEW_TITLES[HISTORY_VIEW]
 		v.Wrap = true
 		v.Autoscroll = true
-
-		go g.Update(func(g *gocui.Gui) error {
-			historyView, err := g.View(HISTORY_VIEW)
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintln(historyView, "...not implemented yet..")
-
-			return nil
-		})
 	}
 	return nil
 }

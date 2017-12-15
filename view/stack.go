@@ -23,7 +23,7 @@ func (s *Stack) Push(value string) {
 
 // Remove the top element from the stack and return it's value
 // If the stack is empty, return nil
-func (s *Stack) Pop() (value string) {
+func (s *Stack) Read() (value string) {
 	if s.size > 0 {
 		value, s.top = s.top.value, s.top.next
 		s.size--
