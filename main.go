@@ -4,118 +4,122 @@ import (
 	"encoding/json"
 	"github.com/proshik/goswe/view"
 	"github.com/proshik/goswe/yandex"
-	"github.com/urfave/cli"
 	"io/ioutil"
+	"os/user"
 	"os"
+	"path"
+	"bufio"
+	"fmt"
 )
 
-var VERSION = "0.1.1"
+const (
+	VERSION = "0.1.0"
+	NAME    = "gotrew"
+)
 
 type Config struct {
-	YDictToken       string `json:"y_dict_token"`
-	YTranslatorToken string `json:"y_translator_token"`
+	YDictToken       string `json:"y_dict_token" long:"y_dict_token" description:"token for Yandex Dictionary API"`
+	YTranslatorToken string `json:"y_translator_token" long:"y_translator_token" description:"token for Yandex Translator API" `
 }
 
 func main() {
-	var yDictToken string
-	var yTranslatorToken string
+	config, err := readConfigFromFS()
+	if err != nil {
+		var yDictToken string
+		fmt.Printf("Yandex dictionary token:\n")
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			yDictToken = scanner.Text()
+			break
+		}
 
-	app := cli.NewApp()
-	app.Usage = "TUI for translate words"
-	app.Version = VERSION
-
-
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:        "yd-token, ydt",
-			Usage:       "token for Yandex Dictionary API",
-			Destination: &yDictToken,
-		},
-		cli.StringFlag{
-			Name:        "yt-token, ytt",
-			Usage:       "token for Yandex Translator API",
-			Destination: &yTranslatorToken,
-		},
+		config = &Config{yDictToken, ""}
+		if err := createConfig(config); err != nil {
+			panic(err)
+		}
 	}
 
-	app.Commands = []cli.Command{
-		{
-			Name:    "translate",
-			Usage:   "translate words",
-			Before:  func(c *cli.Context) error {
-				yDict := yandex.NewYDictionary(yDictToken)
-				yTr := yandex.NewYTranslator(yTranslatorToken)
-				ui := view.NewUI(yDict, yTr)
+	yDict := yandex.NewYDictionary(config.YDictToken)
+	//yTr := yandex.NewYTranslator(yTranslatorToken)
+	ui := view.NewUI(yDict)
 
-				ui.Run()
-				return nil
-			},
-		},
-		//{
-		//	Name:    "config",
-		//	Usage:   "add a task to the list",
-		//	Subcommands:
-		//},
-	}
-
-	app.Run(os.Args)
-
-	//app.Before = func(c *cli.Context) error {
-	//	usr, err := user.Current()
-	//	if err != nil {
-	//		log.Fatalf("Error, not found user home directory, %v", err)
-	//	}
-	//	configFilename := usr.HomeDir + "/.gotrew/config.json"
-	//
-	//	config := extractConfigValue(configFilename)
-	//	if config != nil {
-	//		yDictToken = config.YDictToken
-	//		yTranslatorToken = config.YTranslatorToken
-	//		return nil
-	//	}
-	//
-	//	if yDictToken == "" || yTranslatorToken == "" {
-	//		log.Fatal("GOTREW requires exactly 2 arguments.\n\nSee 'gotrew --help'.")
-	//	}
-	//
-	//	config = &Config{YDictToken: yDictToken, YTranslatorToken: yTranslatorToken}
-	//
-	//	data, err := json.Marshal(&config)
-	//	if err != nil {
-	//		log.Fatalf("Error on save token data in file by path=%s", configFilename)
-	//	}
-	//
-	//	err = os.MkdirAll(usr.HomeDir+"/.gotrew", 0755)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//
-	//	file, err := os.Create(configFilename)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//
-	//	defer file.Close()
-	//
-	//	file.Chmod(0755)
-	//	_, err = file.Write(data)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	file.Sync()
-	//
-	//	return nil
-	//}
-
+	ui.Run()
 }
-func extractConfigValue(filename string) *Config {
+
+//May throw *PathError
+func readConfigFromFS() (*Config, error) {
+	appPath, err := buildAppPath()
+	if err != nil {
+		return nil, err
+	}
+
+	filename := buildConfigPath(appPath)
+
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return nil, err
+	}
+
 	configFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	var config Config
-	json.Unmarshal(configFile, &config)
+	err = json.Unmarshal(configFile, &config)
+	if err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
 
-	return &config
+func createConfig(config *Config) error {
+	appPath, err := buildAppPath()
+	if err != nil {
+		return err
+	}
+
+	filename := buildConfigPath(appPath)
+	//check file and if not exists then create directory
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		err = os.MkdirAll(appPath, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	//create file
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	file.Chmod(0755)
+
+	defer file.Close()
+
+	//transform config to []byte
+	data, err := json.Marshal(&config)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+
+	file.Sync()
+
+	return nil
+}
+
+func buildAppPath() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(usr.HomeDir, "."+NAME), nil
+}
+
+func buildConfigPath(appPath string) string {
+	return path.Join(appPath, "config.json")
 }

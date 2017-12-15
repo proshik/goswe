@@ -47,11 +47,15 @@ type TranslateLangOpt struct {
 
 type UI struct {
 	YDict *yandex.YDictionary
-	YTr   *yandex.YTranslator
+	//YTr   *yandex.YTranslator
 }
 
-func NewUI(yd *yandex.YDictionary, yt *yandex.YTranslator) *UI {
-	return &UI{yd, yt}
+//func NewUI(yd *yandex.YDictionary, yt *yandex.YTranslator) *UI {
+//	return &UI{yd, yt}
+//}
+
+func NewUI(yd *yandex.YDictionary) *UI {
+	return &UI{yd}
 }
 
 func (ui *UI) Run() {
@@ -171,7 +175,7 @@ func cleanView(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func nextView(g *gocui.Gui, v *gocui.View) error {
+func nextView(g *gocui.Gui, _ *gocui.View) error {
 	nextIndex := (activeIndex + 1) % len(VIEW_TITLES)
 
 	if _, err := g.SetCurrentView(VIEWS[nextIndex]); err != nil {
@@ -258,12 +262,12 @@ func getViewValue(g *gocui.Gui, name string) string {
 	return strings.TrimSpace(v.Buffer())
 }
 
-func maybeWord(text string) bool {
-	if len(text) < 27 {
-		return true
-	}
-	return false
-}
+//func maybeWord(text string) bool {
+//	if len(text) < 27 {
+//		return true
+//	}
+//	return false
+//}
 
 //b, err := json.MarshalIndent(&word, "", "\t")
 //if err != nil {
