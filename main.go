@@ -7,6 +7,7 @@ import (
 	"github.com/proshik/goswe/view"
 	"github.com/proshik/goswe/yandex"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/user"
 	"path"
@@ -23,6 +24,15 @@ type Config struct {
 }
 
 func main() {
+
+	f, err := os.OpenFile("log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+
 	config, err := readConfigFromFS()
 	if err != nil {
 		var yDictToken string
@@ -48,6 +58,7 @@ func main() {
 
 	ui.Run()
 }
+
 //May throw *PathError
 func readConfigFromFS() (*Config, error) {
 	appPath, err := buildAppPath()

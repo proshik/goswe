@@ -113,13 +113,14 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 	if err != nil {
 		return err
 	}
+
+	translateView, err := g.View(TRANSLATE_VIEW)
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		g.Update(func(g *gocui.Gui) error {
-			translateView, err := g.View(TRANSLATE_VIEW)
-			if err != nil {
-				return err
-			}
-
 			translateView.Clear()
 
 			fmt.Fprintln(translateView, "...translated...")
@@ -130,50 +131,49 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 	go func() {
 		if val, ok := translateCache[textFromTextView]; ok {
 			g.Update(func(g *gocui.Gui) error {
-				translateView, err := g.View(TRANSLATE_VIEW)
-				if err != nil {
-					return err
-				}
-
 				translateView.Clear()
 
 				fmt.Fprintln(translateView, val)
 				return nil
 			})
-		} else {
-			word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
-			if err != nil {
+			return
+		}
+		word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
+		if err != nil {
+			switch err.(type) {
+			case *yandex.HttpError:
+				log.Printf("HttpError connection, %v", err)
 				g.Update(func(g *gocui.Gui) error {
-					translateView, err := g.View(TRANSLATE_VIEW)
-					if err != nil {
-						return err
-					}
-					fmt.Fprintln(translateView, "...error on translate text...")
+					translateView.Clear()
+
+					fmt.Fprintln(translateView, fmt.Sprintf("%v", err))
 					return nil
 				})
-				return
+			default:
+				log.Printf("Unexpected error, %v", err)
+				g.Update(func(g *gocui.Gui) error {
+					translateView.Clear()
+
+					fmt.Fprintln(translateView, "ERROR! See log file for detailed information!")
+					return nil
+				})
 			}
-
-			// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
-			g.Update(func(g *gocui.Gui) error {
-				translateView, err := g.View(TRANSLATE_VIEW)
-				if err != nil {
-					return err
-				}
-
-				translateView.Clear()
-
-				if !word.IsEmpty() {
-					short, full := word.Print()
-					translateCache[short] = full
-					fmt.Fprintln(translateView, full)
-				} else {
-					fmt.Fprintln(translateView, "...translate not found...")
-				}
-
-				return nil
-			})
+			return
 		}
+		// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
+		g.Update(func(g *gocui.Gui) error {
+			translateView.Clear()
+
+			if !word.IsEmpty() {
+				short, full := word.Print()
+				translateCache[short] = full
+				fmt.Fprintln(translateView, full)
+			} else {
+				fmt.Fprintln(translateView, "...translate not found...")
+			}
+			return nil
+		})
+
 	}()
 	//push text to HISTORY view
 	go func() {
@@ -196,7 +196,7 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 				fmt.Fprintln(historyView, history[i])
 			}
 
-			historyView.SetCursor(0,0)
+			historyView.SetCursor(0, 0)
 
 			return nil
 		})
@@ -205,13 +205,10 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (ui *UI) translate(text string, langFrom string, langTo string) (model.TranslatedText, error) {
-
 	tr, err := ui.YDict.Translate(text, langFrom, langTo)
 	if err != nil {
-		log.Printf("Error on translate word throw Dictionary, err=%v", err)
 		return nil, err
 	}
-
 	return tr, nil
 }
 
@@ -269,7 +266,6 @@ func cursorUp(_ *gocui.Gui, v *gocui.View) error {
 }
 
 func handleHistoryItem(g *gocui.Gui, v *gocui.View) error {
-
 	_, cy := v.Cursor()
 
 	line, err := v.Line(cy)
@@ -289,7 +285,6 @@ func handleHistoryItem(g *gocui.Gui, v *gocui.View) error {
 		fmt.Fprintln(translateView, word)
 		return nil
 	})
-
 	return nil
 }
 

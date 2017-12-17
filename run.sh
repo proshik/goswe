@@ -5,5 +5,5 @@ go build
 if [ $? -eq 0 ]; then
     ./goswe
 else
-    echo FAIL
+    echo "FAIL on go build"
 fi
