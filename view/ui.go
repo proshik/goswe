@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/abadojack/whatlanggo"
@@ -9,7 +10,6 @@ import (
 	"github.com/proshik/goswe/yandex"
 	"log"
 	"strings"
-	"bytes"
 )
 
 const (
@@ -54,12 +54,7 @@ type TranslateLangOpt struct {
 
 type UI struct {
 	YDict *yandex.YDictionary
-	//YTr   *yandex.YTranslator
 }
-
-//func NewUI(yd *yandex.YDictionary, yt *yandex.YTranslator) *UI {
-//	return &UI{yd, yt}
-//}
 
 func NewUI(yd *yandex.YDictionary) *UI {
 	return &UI{yd}
@@ -208,28 +203,13 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (ui *UI) translate(text string, langFrom string, langTo string) (model.TranslatedText, error) {
-	//mayBeWord := maybeWord(text)
-	//containsCaret := strings.Contains(text, "\n")
-	//check on word and not contains \n symbol
-	//if mayBeWord && !containsCaret {
+
 	tr, err := ui.YDict.Translate(text, langFrom, langTo)
 	if err != nil {
 		log.Printf("Error on translate word throw Dictionary, err=%v", err)
 		return nil, err
 	}
-	//if !tr.IsEmpty() {
-	//	return tr, nil
-	//}
 
-	//} else {
-	//
-	//}
-	//now try translate throw yandex Translator
-	//tr, err := ui.YTr.Translate(text, langFrom, langTo)
-	//if err != nil {
-	//	log.Printf("Error on translate word throw Translator, err=%v", err)
-	//	return nil, err
-	//}
 	return tr, nil
 }
 
@@ -308,36 +288,6 @@ func handleHistoryItem(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	})
 
-	//fmt.Printf("Str: %s", str)
-
-	//if line, err1 := v.Line(cy); err1 != nil {
-	//	err = err1
-	//	g.Update(func(g *gocui.Gui) error {
-	//		translateView, err := g.View(TRANSLATE_VIEW)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		word := translateCache[line]
-	//
-	//		fmt.Printf("\n%s", word)
-	//
-	//		fmt.Fprintln(translateView, word)
-	//		return nil
-	//	})
-	//} else {
-	//	fmt.Printf("%v", err)
-	//}
-
-	//maxX, maxY := g.Size()
-	//if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2); err != nil {
-	//	if err != gocui.ErrUnknownView {
-	//		return err
-	//	}
-	//	fmt.Fprintln(v, line)
-	//	if _, err := g.SetCurrentView("msg"); err != nil {
-	//		return err
-	//	}
-	//}
 	return nil
 }
 

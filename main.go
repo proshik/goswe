@@ -44,7 +44,6 @@ func main() {
 	}
 
 	yDict := yandex.NewYDictionary(config.YDictToken)
-	//yTr := yandex.NewYTranslator(yTranslatorToken)
 	ui := view.NewUI(yDict)
 
 	ui.Run()
