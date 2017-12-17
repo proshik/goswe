@@ -2,4 +2,8 @@
 
 rm -rf goswe
 go build
-./goswe
+if [ $? -eq 0 ]; then
+    ./goswe
+else
+    echo FAIL
+fi

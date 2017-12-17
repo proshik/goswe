@@ -6,7 +6,7 @@ import (
 )
 
 type TranslatedText interface {
-	Print() string
+	Print() (string, string)
 	IsEmpty() bool
 }
 
@@ -17,8 +17,12 @@ type Translate struct {
 	Text []string `json:"text"`
 }
 
-func (w *Translate) Print() string {
-	return w.Text[0]
+func (w *Translate) Print() (string, string) {
+	if len(w.Text[0]) > 25 {
+		return w.Text[0][0:25], w.Text[0]
+	} else {
+		return w.Text[0], w.Text[0]
+	}
 }
 
 func (w *Translate) IsEmpty() bool {
@@ -34,7 +38,7 @@ type Dictionary struct {
 	Def  []Def `json:"def"`
 }
 
-func (w *Dictionary) Print() string {
+func (w *Dictionary) Print() (string, string) {
 	var buf bytes.Buffer
 
 	buf.WriteString(w.Def[0].Tr[0].Text + "\n")
@@ -67,7 +71,7 @@ func (w *Dictionary) Print() string {
 		}
 		buf.WriteString(fmt.Sprintf("\n"))
 	}
-	return buf.String()
+	return w.Def[0].Text, buf.String()
 }
 
 func (w *Dictionary) IsEmpty() bool {

@@ -9,6 +9,7 @@ import (
 	"github.com/proshik/goswe/yandex"
 	"log"
 	"strings"
+	"bytes"
 )
 
 const (
@@ -17,12 +18,14 @@ const (
 	TEXT_VIEW      = "text"
 	TRANSLATE_VIEW = "translate"
 	HISTORY_VIEW   = "history"
+	INFO_VIEW      = "info"
 )
 
 var VIEW_TITLES = map[string]string{
 	TEXT_VIEW:      "Text",
 	TRANSLATE_VIEW: "Dictionary",
 	HISTORY_VIEW:   "History",
+	INFO_VIEW:      "Keyboard shortcuts",
 }
 
 var VIEWS = []string{
@@ -41,6 +44,8 @@ var OPTIONS_DETECT_LANG = whatlanggo.Options{
 var activeIndex = 0
 
 var history = make([]string, 0)
+
+var translateCache = make(map[string]string)
 
 type TranslateLangOpt struct {
 	source      string
@@ -77,13 +82,22 @@ func (ui *UI) Run() {
 	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, nextView); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleText); err != nil {
+	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleInputText); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEsc, gocui.ModNone, cleanView); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding(HISTORY_VIEW, gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding(HISTORY_VIEW, gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding(HISTORY_VIEW, gocui.KeyEnter, gocui.ModNone, handleHistoryItem); err != nil {
 		log.Panicln(err)
 	}
 
@@ -92,7 +106,7 @@ func (ui *UI) Run() {
 	}
 }
 
-func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
+func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 	//extract text from TEXT view
 	textFromTextView := getViewValue(g, TEXT_VIEW)
 	if textFromTextView == "" {
@@ -119,36 +133,52 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 	}()
 
 	go func() {
-		word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
-		if err != nil {
+		if val, ok := translateCache[textFromTextView]; ok {
 			g.Update(func(g *gocui.Gui) error {
 				translateView, err := g.View(TRANSLATE_VIEW)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(translateView, "...error on translate text...")
+
+				translateView.Clear()
+
+				fmt.Fprintln(translateView, val)
 				return nil
 			})
-			return
-		}
-
-		// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
-		g.Update(func(g *gocui.Gui) error {
-			translateView, err := g.View(TRANSLATE_VIEW)
+		} else {
+			word, err := ui.translate(textFromTextView, langOpt.source, langOpt.destination)
 			if err != nil {
-				return err
+				g.Update(func(g *gocui.Gui) error {
+					translateView, err := g.View(TRANSLATE_VIEW)
+					if err != nil {
+						return err
+					}
+					fmt.Fprintln(translateView, "...error on translate text...")
+					return nil
+				})
+				return
 			}
 
-			translateView.Clear()
+			// update TRANSLATE view. Exactly search translate word in db or translate with yandex dictionary
+			g.Update(func(g *gocui.Gui) error {
+				translateView, err := g.View(TRANSLATE_VIEW)
+				if err != nil {
+					return err
+				}
 
-			if !word.IsEmpty() {
-				fmt.Fprintln(translateView, word.Print())
-			} else {
-				fmt.Fprintln(translateView, "...translate not found...")
-			}
+				translateView.Clear()
 
-			return nil
-		})
+				if !word.IsEmpty() {
+					short, full := word.Print()
+					translateCache[short] = full
+					fmt.Fprintln(translateView, full)
+				} else {
+					fmt.Fprintln(translateView, "...translate not found...")
+				}
+
+				return nil
+			})
+		}
 	}()
 	//push text to HISTORY view
 	go func() {
@@ -156,6 +186,12 @@ func (ui *UI) handleText(g *gocui.Gui, v *gocui.View) error {
 			historyView, err := g.View(HISTORY_VIEW)
 			if err != nil {
 				return err
+			}
+
+			if len(history) > 0 {
+				if history[len(history)-1] == textFromTextView {
+					return nil
+				}
 			}
 
 			history = append(history, textFromTextView)
@@ -207,7 +243,7 @@ func cleanView(g *gocui.Gui, v *gocui.View) error {
 }
 
 func nextView(g *gocui.Gui, _ *gocui.View) error {
-	nextIndex := (activeIndex + 1) % len(VIEW_TITLES)
+	nextIndex := (activeIndex + 1) % (len(VIEW_TITLES) - 1)
 
 	if _, err := g.SetCurrentView(VIEWS[nextIndex]); err != nil {
 		return err
@@ -221,6 +257,87 @@ func nextView(g *gocui.Gui, _ *gocui.View) error {
 	}
 
 	activeIndex = nextIndex
+	return nil
+}
+
+func cursorDown(_ *gocui.Gui, v *gocui.View) error {
+	if v != nil {
+		cx, cy := v.Cursor()
+		if err := v.SetCursor(cx, cy+1); err != nil {
+			ox, oy := v.Origin()
+			if err := v.SetOrigin(ox, oy+1); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func cursorUp(_ *gocui.Gui, v *gocui.View) error {
+	if v != nil {
+		ox, oy := v.Origin()
+		cx, cy := v.Cursor()
+		if err := v.SetCursor(cx, cy-1); err != nil && oy > 0 {
+			if err := v.SetOrigin(ox, oy-1); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func handleHistoryItem(g *gocui.Gui, v *gocui.View) error {
+
+	_, cy := v.Cursor()
+
+	line, err := v.Line(cy)
+	if err != nil {
+		fmt.Printf("Error: %v", err)
+	}
+	g.Update(func(g *gocui.Gui) error {
+		translateView, err := g.View(TRANSLATE_VIEW)
+		if err != nil {
+			return err
+		}
+
+		word := translateCache[line]
+
+		translateView.Clear()
+
+		fmt.Fprintln(translateView, word)
+		return nil
+	})
+
+	//fmt.Printf("Str: %s", str)
+
+	//if line, err1 := v.Line(cy); err1 != nil {
+	//	err = err1
+	//	g.Update(func(g *gocui.Gui) error {
+	//		translateView, err := g.View(TRANSLATE_VIEW)
+	//		if err != nil {
+	//			return err
+	//		}
+	//		word := translateCache[line]
+	//
+	//		fmt.Printf("\n%s", word)
+	//
+	//		fmt.Fprintln(translateView, word)
+	//		return nil
+	//	})
+	//} else {
+	//	fmt.Printf("%v", err)
+	//}
+
+	//maxX, maxY := g.Size()
+	//if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2); err != nil {
+	//	if err != gocui.ErrUnknownView {
+	//		return err
+	//	}
+	//	fmt.Fprintln(v, line)
+	//	if _, err := g.SetCurrentView("msg"); err != nil {
+	//		return err
+	//	}
+	//}
 	return nil
 }
 
@@ -255,7 +372,7 @@ func layout(g *gocui.Gui) error {
 		}
 	}
 
-	if v, err := g.SetView(TRANSLATE_VIEW, maxX/2, 0, maxX-1, maxY-1); err != nil {
+	if v, err := g.SetView(TRANSLATE_VIEW, maxX/2, 0, maxX-1, maxY-8); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -263,6 +380,32 @@ func layout(g *gocui.Gui) error {
 		v.Wrap = true
 		v.Autoscroll = true
 	}
+
+	if v, err := g.SetView(INFO_VIEW, maxX/2, maxY-7, maxX-1, maxY-1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Title = VIEW_TITLES[INFO_VIEW]
+		v.Wrap = true
+
+		go g.Update(func(g *gocui.Gui) error {
+			infoView, err := g.View(INFO_VIEW)
+			if err != nil {
+				return err
+			}
+
+			buf := bytes.Buffer{}
+			buf.WriteString("<Tab> - change view\n")
+			buf.WriteString("<Enter> - translate text on Text view\n")
+			buf.WriteString("<Enter> - select text on History view\n")
+			buf.WriteString("<↑,↓> - navigate inside view\n")
+			buf.WriteString("<Ctrl+C> - exit\n")
+			fmt.Fprintln(infoView, buf.String())
+
+			return nil
+		})
+	}
+
 	if v, err := g.SetView(HISTORY_VIEW, 0, maxY/2, maxX/2-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -270,6 +413,9 @@ func layout(g *gocui.Gui) error {
 		v.Title = VIEW_TITLES[HISTORY_VIEW]
 		v.Wrap = true
 		v.Autoscroll = true
+		v.Highlight = true
+		v.SelBgColor = gocui.ColorGreen
+		v.SelFgColor = gocui.ColorBlack
 	}
 	return nil
 }
