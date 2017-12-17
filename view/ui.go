@@ -196,6 +196,8 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 				fmt.Fprintln(historyView, history[i])
 			}
 
+			historyView.SetCursor(0,0)
+
 			return nil
 		})
 	}()
@@ -364,7 +366,7 @@ func layout(g *gocui.Gui) error {
 		v.Wrap = true
 		v.Autoscroll = true
 		v.Highlight = true
-		v.SelBgColor = gocui.ColorGreen
+		v.SelBgColor = gocui.ColorYellow
 		v.SelFgColor = gocui.ColorBlack
 	}
 	return nil

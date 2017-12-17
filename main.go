@@ -48,7 +48,6 @@ func main() {
 
 	ui.Run()
 }
-
 //May throw *PathError
 func readConfigFromFS() (*Config, error) {
 	appPath, err := buildAppPath()
