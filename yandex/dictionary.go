@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/proshik/goswe/model"
-	"log"
 	"net/http"
 )
 
@@ -72,8 +71,6 @@ func (yDict *YDictionary) Translate(text string, langFrom string, langTo string)
 
 		return nil, err
 	}
-
-	log.Printf("After translate on ui, %v", &tr)
 
 	return &tr, nil
 }

@@ -52,7 +52,7 @@ func (w *Dictionary) Print() (string, string) {
 				for _, s := range t.Syn {
 					buf.WriteString(fmt.Sprintf(", %s %s", s.Text, t.Gen))
 				}
-				fmt.Printf("\n")
+				buf.WriteString("\n")
 				if len(t.Mean) > 0 {
 					buf.WriteString(fmt.Sprintf("("))
 					for im, s := range t.Mean {

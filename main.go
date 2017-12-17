@@ -7,10 +7,10 @@ import (
 	"github.com/proshik/goswe/view"
 	"github.com/proshik/goswe/yandex"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/user"
 	"path"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -24,14 +24,41 @@ type Config struct {
 }
 
 func main() {
+	////Logging
+	//f, err := os.OpenFile("log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	//if err != nil {
+	//	log.Fatalf("error opening file: %v", err)
+	//}
+	//defer f.Close()
+	//
+	//log.SetOutput(f)
 
-	f, err := os.OpenFile("log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+	var yDictToken string
+	var yTranslatorToken string
+
+	app := cli.NewApp()
+	app.Usage = "translate ru/en words"
+	app.Version = VERSION
+
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "y_dict_token, ydt",
+			Usage:       "token for Yandex Dictionary API",
+			Destination: &yDictToken,
+		},
+		cli.StringFlag{
+			Name:        "y_translator_token, ytt",
+			Usage:       "token for Yandex Translator API",
+			Destination: &yTranslatorToken,
+		},
 	}
-	defer f.Close()
+	app.Run(os.Args)
 
-	log.SetOutput(f)
+	if yDictToken != "" || yTranslatorToken != "" {
+		if err := createConfig(&Config{yDictToken, yTranslatorToken}); err != nil {
+			panic(err)
+		}
+	}
 
 	config, err := readConfigFromFS()
 	if err != nil {

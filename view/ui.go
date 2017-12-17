@@ -142,7 +142,8 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 		if err != nil {
 			switch err.(type) {
 			case *yandex.HttpError:
-				log.Printf("HttpError connection, %v", err)
+				//todo uncomment when add save log files
+				//log.Printf("HttpError connection, %v", err)
 				g.Update(func(g *gocui.Gui) error {
 					translateView.Clear()
 
