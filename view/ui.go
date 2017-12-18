@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/abadojack/whatlanggo"
 	"github.com/jroimartin/gocui"
-	"github.com/proshik/goswe/model"
-	"github.com/proshik/goswe/yandex"
+	"github.com/proshik/gotrew/model"
+	"github.com/proshik/gotrew/yandex"
 	"log"
 	"strings"
 )

@@ -3,7 +3,7 @@ package yandex
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/proshik/goswe/model"
+	"github.com/proshik/gotrew/model"
 	"net/http"
 	"net/url"
 	"strings"

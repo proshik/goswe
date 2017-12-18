@@ -18,10 +18,8 @@
 .idea
 
 #Other files
-../goland/boltdb/run.txt
 result.json
 words
+*.db
 database_bw.db
-*.exe
-goswe.exe~h
 *.log

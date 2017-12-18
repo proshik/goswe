@@ -2,8 +2,8 @@
 
 set mypath=%cd%
 
-if exist goswe.exe (
-    del goswe.exe
+if exist gotrew.exe (
+    del gotrew.exe
 ) else (
     ECHO File not found for delete
 )
@@ -12,10 +12,9 @@ FOR /F "tokens=* USEBACKQ" %%F IN (`go build`) DO (
     SET var=%%F
 )
 
-if exist goswe.exe (
-    start %mypath%\goswe.exe
+if exist gotrew.exe (
+    start %mypath%\gotrew.exe
 ) else (
     ECHO %var%
 )
-
 

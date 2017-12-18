@@ -1,9 +1,9 @@
 #!/bin/bash
 
-rm -rf goswe
+rm -rf gotrew
 go build
 if [ $? -eq 0 ]; then
-    ./goswe
+    ./gotrew
 else
     echo "FAIL on go build"
 fi
