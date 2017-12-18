@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/proshik/gotrew/view"
 	"github.com/proshik/gotrew/yandex"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
-	"github.com/urfave/cli"
 )
 
 const (

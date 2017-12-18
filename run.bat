@@ -17,4 +17,3 @@ if exist gotrew.exe (
 ) else (
     ECHO %var%
 )
-
