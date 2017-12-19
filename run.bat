@@ -13,7 +13,7 @@ FOR /F "tokens=* USEBACKQ" %%F IN (`go build`) DO (
 )
 
 if exist gotrew.exe (
-    start %mypath%\gotrew.exe
+    start %mypath%\gotrew.exe %*
 ) else (
     ECHO %var%
 )
