@@ -32,10 +32,10 @@ var listProviders = make([]Provider, 0)
 var config *Config
 
 func Execute() {
-
 	app := cli.NewApp()
-	app.Usage = `Application for translate words. Support english and russian languages.`
 	app.Version = VERSION
+	app.Usage = `Application for translate words. Support english and russian languages.`
+	app.HideVersion = false
 
 	app.Commands = []cli.Command{
 		{
