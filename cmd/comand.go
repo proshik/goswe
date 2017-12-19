@@ -14,8 +14,8 @@ import (
 )
 
 type Config struct {
-	YDictToken       string `json:"y_dict_token" long:"y_dict_token" description:"token for Yandex Dictionary API"`
-	YTranslatorToken string `json:"y_translator_token" long:"y_translator_token" description:"token for Yandex Translator API" `
+	YDictToken       string `json:"y_dict_token"`
+	YTranslatorToken string `json:"y_translator_token"`
 }
 
 type Provider struct {
@@ -41,7 +41,7 @@ func Execute() {
 		{
 			Name:    "translate",
 			Aliases: []string{"t"},
-			Usage:   "transate words",
+			Usage:   "translate words",
 			Action: func(c *cli.Context) error {
 				yDict := yandex.NewYDictionary(config.YDictToken)
 				ui := view.NewUI(yDict)
@@ -91,7 +91,7 @@ func Execute() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "token, t",
-							Usage: "yandex dictionary token",
+							Usage: "provider dictionary token",
 						},
 					},
 					Action: func(c *cli.Context) error {
@@ -161,7 +161,6 @@ func Execute() {
 }
 
 func initConfig(appPath string) error {
-
 	configFilename := buildConfigPath(appPath)
 
 	if _, err := os.Stat(configFilename); os.IsNotExist(err) {
@@ -239,7 +238,6 @@ func saveConfig(filename string, config *Config) error {
 }
 
 func readConfig(filename string) (*Config, error) {
-
 	configFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
