@@ -5,7 +5,7 @@ all: install
 install: vendor
 	go install -v
 
-test: bootstrap
+test: vendor
 	go test -v ./...
 
 fmt:
