@@ -28,8 +28,7 @@ func main() {
 	}
 	defer logFile.Close()
 
-	mw := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(mw)
+	log.SetOutput(logFile)
 
 	//run a command line interface
 	cmd.Execute(NAME, VERSION)
