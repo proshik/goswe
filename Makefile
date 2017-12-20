@@ -2,10 +2,10 @@ VERSION := $(shell cat ./VERSION)
 
 all: install
 
-install:
+install: vendor
 	go install -v
 
-test:
+test: bootstrap
 	go test -v ./...
 
 fmt:
@@ -16,4 +16,16 @@ release:
 	git push origin $(VERSION)
 	goreleaser --rm-dist
 
-.PHONY: install test fmt release
+vendor: bootstrap
+	dep ensure
+
+
+HAS_DEP := $(shell command -v dep;)
+HAS_LINT := $(shell command -v golint;)
+
+bootstrap:
+ifndef HAS_DEP
+	go get -u github.com/golang/dep/cmd/dep
+endif
+
+.PHONY: install test fmt vendor release
