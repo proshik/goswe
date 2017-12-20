@@ -243,9 +243,8 @@ func nextView(g *gocui.Gui, _ *gocui.View) error {
 func cursorDown(_ *gocui.Gui, v *gocui.View) error {
 	if v != nil {
 		cx, cy := v.Cursor()
-		if err := v.SetCursor(cx, cy+1); err != nil {
-			ox, oy := v.Origin()
-			if err := v.SetOrigin(ox, oy+1); err != nil {
+		if cy < len(history)-1 {
+			if err := v.SetCursor(cx, cy+1); err != nil {
 				return err
 			}
 		}
