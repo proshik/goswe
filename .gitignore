@@ -23,4 +23,7 @@ words
 *.db
 database_bw.db
 *.log
+.DS_Store
 .gitignore
+/dist
+/vendor
