@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 )
 
 type Config struct {
@@ -21,6 +22,7 @@ type Config struct {
 type Provider struct {
 	Title  string
 	Active bool
+	URL    string
 }
 
 const (
@@ -34,14 +36,14 @@ var config *Config
 func Execute() {
 	app := cli.NewApp()
 	app.Version = VERSION
-	app.Usage = `Application for translate words. Support english and russian languages.`
+	app.Usage = "Application for translate words. Support english and russian languages."
 	app.HideVersion = false
 
 	app.Commands = []cli.Command{
 		{
 			Name:    "translate",
 			Aliases: []string{"t"},
-			Usage:   "translate words",
+			Usage:   "translate words mode",
 			Action: func(c *cli.Context) error {
 				yDict := yandex.NewYDictionary(config.YDictToken)
 				ui := view.NewUI(yDict)
@@ -60,7 +62,7 @@ func Execute() {
 					Usage: "list available providers",
 					Action: func(c *cli.Context) error {
 						for _, p := range listProviders {
-							fmt.Printf("Title: %s - active: %v\n", p.Title, p.Active)
+							fmt.Printf("- %s, active: %v, url: %s\n", strings.ToUpper(p.Title), p.Active, p.URL)
 						}
 						return nil
 					},
@@ -75,7 +77,7 @@ func Execute() {
 						}
 
 						for _, p := range listProviders {
-							if p.Title == c.Args().First() {
+							if strings.ToUpper(p.Title) == strings.ToUpper(c.Args().First()) {
 								fmt.Printf("Select provider: %s\n", c.Args().First())
 								return nil
 							}
@@ -152,7 +154,7 @@ func Execute() {
 			return err
 		}
 
-		listProviders = append(listProviders, Provider{Title: "yandex", Active: true})
+		listProviders = append(listProviders, Provider{Title: "yandex", Active: true, URL: "https://tech.yandex.ru/dictionary"})
 
 		return nil
 	}
