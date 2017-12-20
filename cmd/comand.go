@@ -3,14 +3,13 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/proshik/gotrew/utils"
 	"github.com/proshik/gotrew/view"
 	"github.com/proshik/gotrew/yandex"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
-	"path"
 	"strings"
 )
 
@@ -25,17 +24,13 @@ type Provider struct {
 	URL    string
 }
 
-const (
-	VERSION = "0.1"
-	NAME    = "gotrew"
-)
-
 var listProviders = make([]Provider, 0)
 var config *Config
 
-func Execute() {
+func Execute(appName string, appVersion string) {
 	app := cli.NewApp()
-	app.Version = VERSION
+	app.Name = appName
+	app.Version = appVersion
 	app.Usage = "Application for translate words. Support english and russian languages."
 	app.HideVersion = false
 
@@ -118,11 +113,11 @@ func Execute() {
 							fmt.Printf("Unrecognized provider title: %s\n", c.Args().First())
 							return nil
 						}
-						appPath, err := buildAppPath()
+						appPath, err := utils.BuildAppPath(appName)
 						if err != nil {
 							panic(err)
 						}
-						configFilename := buildConfigPath(appPath)
+						configFilename := utils.BuildConfigPath(appPath)
 
 						err = saveConfig(configFilename, &Config{token, ""})
 						if err != nil {
@@ -137,7 +132,7 @@ func Execute() {
 	}
 
 	app.Before = func(context *cli.Context) error {
-		appPath, err := buildAppPath()
+		appPath, err := utils.BuildAppPath(appName)
 		if err != nil {
 			panic(err)
 		}
@@ -146,8 +141,6 @@ func Execute() {
 		if err != nil {
 			return nil
 		}
-
-		initLogging(appPath)
 
 		err = initConfig(appPath)
 		if err != nil {
@@ -159,11 +152,16 @@ func Execute() {
 		return nil
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Println("Application was running!")
 }
 
 func initConfig(appPath string) error {
-	configFilename := buildConfigPath(appPath)
+	configFilename := utils.BuildConfigPath(appPath)
 
 	if _, err := os.Stat(configFilename); os.IsNotExist(err) {
 		if err := saveConfig(configFilename, &Config{"", ""}); err != nil {
@@ -178,29 +176,6 @@ func initConfig(appPath string) error {
 	config = c
 
 	return nil
-}
-
-func initLogging(appPath string) {
-	f, err := os.OpenFile(path.Join(appPath, "log.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	log.SetOutput(f)
-}
-
-func buildAppPath() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	return path.Join(usr.HomeDir, "."+NAME), nil
-}
-
-func buildConfigPath(appPath string) string {
-	return path.Join(appPath, "config.json")
 }
 
 func initApplicationDir(appPath string) error {

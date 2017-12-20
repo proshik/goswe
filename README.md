@@ -1,5 +1,10 @@
 # gotrew
 
+[![Build Status](https://travis-ci.org/proshik/gotrew.svg?branch=master)](https://travis-ci.org/proshik/gotrew)
+[![Go Report Card](https://goreportcard.com/badge/github.com/proshik/gotrew)](https://goreportcard.com/report/github.com/proshik/gotrew)
+[![codecov](https://codecov.io/gh/proshik/jalmew/branch/master/graph/badge.svg)](https://codecov.io/gh/proshik/gotrew)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/proshik/gotrew/issues)
+
 Console Application for translate words. Support english and russian languages.
 
 ## Installation
@@ -22,10 +27,10 @@ NAME:
    gotrew - Application for translate words. Support english and russian languages.
 
 USAGE:
-   gotrew [global options] command [command options] [arguments...]
+   gotrew.exe [global options] command [command options] [arguments...]
 
 VERSION:
-   0.1
+   0.1.0
 
 COMMANDS:
      translate, t  translate words mode
@@ -36,8 +41,6 @@ GLOBAL OPTIONS:
    --help, -h     show help
    --version, -v  print the version
 ```
-
-## Usage
 
 Command <provider> for work with available providers translated.
 

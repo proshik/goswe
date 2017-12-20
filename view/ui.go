@@ -142,8 +142,7 @@ func (ui *UI) handleInputText(g *gocui.Gui, v *gocui.View) error {
 		if err != nil {
 			switch err.(type) {
 			case *yandex.HttpError:
-				//todo uncomment when add save log files
-				//log.Printf("HttpError connection, %v", err)
+				log.Printf("HttpError connection, %v", err)
 				g.Update(func(g *gocui.Gui) error {
 					translateView.Clear()
 
@@ -229,7 +228,6 @@ func nextView(g *gocui.Gui, _ *gocui.View) error {
 		return err
 	}
 
-	//todo check this place when will be need to enable cursor on view
 	if nextIndex == 0 || nextIndex == 3 {
 		g.Cursor = true
 	} else {
