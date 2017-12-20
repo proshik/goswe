@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"io"
 )
 
 //NAME is a title application
