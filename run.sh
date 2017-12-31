@@ -3,7 +3,7 @@
 rm -rf gotrew
 go build
 if [ $? -eq 0 ]; then
-    ./gotrew
+    ./gotrew $1
 else
     echo "FAIL on go build"
 fi

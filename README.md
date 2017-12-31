@@ -7,6 +7,8 @@
 
 Console Application for translate words. Support english and russian languages.
 
+![Alt Text](https://github.com/proshik/gotrew/public/intro.gif)
+
 ## Installation
 
 ```shell
