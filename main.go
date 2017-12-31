@@ -21,7 +21,16 @@ func main() {
 		panic(err)
 	}
 
-	logFile, err := os.OpenFile(path.Join(appPath, "log.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	logFilePath := path.Join(appPath, "log.log")
+	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
+		f, err := os.Create(logFilePath)
+		if err != nil {
+			panic(err)
+		}
+		f.Close()
+	}
+
+	logFile, err := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
 	}
