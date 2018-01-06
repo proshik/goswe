@@ -4,7 +4,7 @@ go:
   - 1.9
   - master
 
-script: make test
+script: make test cover
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
