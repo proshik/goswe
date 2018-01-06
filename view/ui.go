@@ -77,7 +77,7 @@ func (ui *UI) Run() {
 	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyTab, gocui.ModNone, nextView); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding(ALL_VIEWS, gocui.KeyCtrlX, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding(TEXT_VIEW, gocui.KeyEnter, gocui.ModNone, ui.handleInputText); err != nil {
@@ -240,10 +240,14 @@ func nextView(g *gocui.Gui, _ *gocui.View) error {
 
 func cursorDown(_ *gocui.Gui, v *gocui.View) error {
 	if v != nil {
-		cx, cy := v.Cursor()
+		_, cy := v.Cursor()
 		if cy < len(history)-1 {
-			if err := v.SetCursor(cx, cy+1); err != nil {
-				return err
+			ox, oy := v.Origin()
+			cx, cy := v.Cursor()
+			if err := v.SetCursor(cx, cy+1); err != nil && oy > 0 {
+				if err := v.SetOrigin(ox, oy+1); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -323,7 +327,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = VIEW_TITLES[TRANSLATE_VIEW]
 		v.Wrap = true
-		v.Autoscroll = true
+		v.Autoscroll = false
 	}
 
 	if v, err := g.SetView(INFO_VIEW, maxX/2, maxY-7, maxX-1, maxY-1); err != nil {
@@ -344,7 +348,7 @@ func layout(g *gocui.Gui) error {
 			buf.WriteString("<Enter> - translate text on Text view\n")
 			buf.WriteString("<Enter> - select text on History view\n")
 			buf.WriteString("<↑,↓> - navigate inside view\n")
-			buf.WriteString("<Ctrl+C> - exit\n")
+			buf.WriteString("<Ctrl+X> - exit\n")
 			fmt.Fprintln(infoView, buf.String())
 
 			return nil
@@ -356,8 +360,8 @@ func layout(g *gocui.Gui) error {
 			return err
 		}
 		v.Title = VIEW_TITLES[HISTORY_VIEW]
-		v.Wrap = true
-		v.Autoscroll = true
+		v.Wrap = false
+		v.Autoscroll = false
 		v.Highlight = true
 		v.SelBgColor = gocui.ColorYellow
 		v.SelFgColor = gocui.ColorBlack
@@ -372,17 +376,3 @@ func getViewValue(g *gocui.Gui, name string) string {
 	}
 	return strings.TrimSpace(v.Buffer())
 }
-
-//func maybeWord(text string) bool {
-//	if len(text) < 27 {
-//		return true
-//	}
-//	return false
-//}
-
-//b, err := json.MarshalIndent(&word, "", "\t")
-//if err != nil {
-//	fmt.Println("error:", err)
-//}
-//
-//fmt.Println(string(b))
