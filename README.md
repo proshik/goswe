@@ -73,7 +73,7 @@ $ gotrew provider list
 
 You may print follow command for help
 
-```shell
+```console
 $ gotrew provider config -h
 
 NAME:
