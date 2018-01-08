@@ -11,28 +11,29 @@ Console Application for translate words. Support english and russian languages.
 
 ## Installation
 
-```shell
-go get github.com/proshik/gotrew
-cd $GOPATH/src/github.com/proshik/gotrew
-go install
+```console
+$ go get github.com/proshik/gotrew
+$ cd $GOPATH/src/github.com/proshik/gotrew
+$ go install
 ```
 
-```shell
-gotrew --help
+```console
+$ gotrew --help
 ```
 
 ## Usage manual
 
 ```console
 $ gotrew
+
 NAME:
    gotrew - Application for translate words. Support english and russian languages.
 
 USAGE:
-   gotrew.exe [global options] command [command options] [arguments...]
+   gotrew [global options] command [command options] [arguments...]
 
 VERSION:
-   0.1.0
+   0.1.5
 
 COMMANDS:
      translate, t  translate words mode
@@ -46,14 +47,14 @@ GLOBAL OPTIONS:
 
 Command <provider> for work with available providers translated.
 
-```shell
+```console
 $ gotrew.exe provider
 
 NAME:
-   gotrew.exe provider - show and select provider for translate
+   gotrew provider - show and select provider for translate
 
 USAGE:
-   gotrew.exe provider command [command options] [arguments...]
+   gotrew provider command [command options] [arguments...]
 
 COMMANDS:
      list    list available providers
@@ -62,19 +63,18 @@ COMMANDS:
 
 OPTIONS:
    --help, -h  show help
-
 ```
 
 Need select one provider from list, and configure him. (Now support only Yandex Dictionary API and chosen by `default`)
 
-```shell
-gotrew provider list
+```console
+$ gotrew provider list
 ```
 
 You may print follow command for help
 
 ```shell
-$ gotrew.exe provider config -h
+$ gotrew provider config -h
 
 NAME:
    gotrew.exe provider config - set config for providers
@@ -91,7 +91,7 @@ Specifies token for access to external service of translating.
 
 Example configure follow next 
 
-```shell
+```console
 $ gotrew provider config yandex --token=<yandex_dictionary_token>
 ```
 

@@ -12,7 +12,7 @@ import (
 const NAME = "gotrew"
 
 //VERSION is a version of application
-var VERSION = "0.1.2"
+var VERSION = "0.1.5"
 
 func main() {
 	//logging configure
